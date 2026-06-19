@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secrets of Mental Math - Practice Deck</title>
+<style>
+:root {
+  --stage-black: #0b0b16;
+  --stage-deep: #15132a;
+  --stage-panel: #1d1b38;
+  --stage-panel-soft: #26244a;
+  --ink: #f4f1ff;
+  --ink-soft: #b9b4d8;
+  --ink-faint: #837ea8;
+  --gold: #f5c451;
+  --gold-bright: #ffd97a;
+  --violet: #8b6cf0;
+  --violet-bright: #a98bff;
+  --teal: #54d6c2;
+  --rose: #ff6f8f;
+  --green: #5fd38a;
+  --radius: 16px;
+  --edge: 1px solid rgba(255, 255, 255, 0.08);
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+  font-family: "Iowan Old Style", "Palatino Linotype", "Georgia", serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(139, 108, 240, 0.22), transparent 60%),
+    radial-gradient(900px 500px at 90% 10%, rgba(245, 196, 81, 0.10), transparent 55%),
+    var(--stage-black);
+  line-height: 1.5;
+}
+
+.wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 96px; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+.topbar a { color: var(--gold); text-decoration: none; font-size: 0.95rem; letter-spacing: 0.02em; }
+.topbar a:hover { color: var(--gold-bright); }
+.chapter-chip {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--violet-bright);
+  border: 1px solid rgba(169, 139, 255, 0.4);
+  padding: 5px 11px;
+  border-radius: 999px;
+}
+
+header.hero { margin-bottom: 36px; }
+header.hero h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  margin: 0 0 12px;
+  background: linear-gradient(120deg, var(--gold-bright), var(--violet-bright));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.01em;
+}
+header.hero .one-line { font-size: 1.18rem; color: var(--ink-soft); margin: 0 0 6px; }
+header.hero .covers { font-size: 0.98rem; color: var(--ink-faint); margin: 0; }
+
+section.card {
+  background: linear-gradient(180deg, var(--stage-panel), var(--stage-deep));
+  border: var(--edge);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+  margin-bottom: 28px;
+}
+section.card > h2 {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--gold); margin: 0 0 18px;
+}
+section.card > h2 .glyph { font-size: 1.1rem; }
+
+.step-line {
+  border-left: 3px solid rgba(169, 139, 255, 0.5);
+  padding: 4px 0 4px 16px;
+  margin: 0 0 14px;
+  animation: rise 0.4s ease;
+}
+.step-line:last-child { margin-bottom: 0; }
+.step-text { margin: 0 0 6px; color: var(--ink); }
+.step-text:last-child { margin-bottom: 0; }
+.step-math {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 1.12rem;
+  color: var(--gold-bright);
+  background: rgba(0, 0, 0, 0.28);
+  padding: 8px 12px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: inherit; font-size: 0.98rem; cursor: pointer;
+  border: none; border-radius: 999px; padding: 11px 22px;
+  color: var(--stage-black); background: linear-gradient(120deg, var(--gold), var(--gold-bright));
+  font-weight: 600; letter-spacing: 0.01em; transition: transform 0.12s ease, filter 0.12s ease;
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid rgba(255,255,255,0.18); }
+.btn.ghost:hover { color: var(--ink); }
+.btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+
+.scoreboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+.score { background: rgba(0,0,0,0.25); border: var(--edge); border-radius: 12px; padding: 12px 14px; text-align: center; }
+.score .label { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.score .value { font-size: 1.5rem; font-weight: 700; color: var(--ink); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.score.is-timer .value { color: var(--teal); }
+.bests { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+.bests .score .value { font-size: 1.15rem; color: var(--gold-bright); }
+
+#drill-panel { position: relative; }
+#drill-panel:not(.is-active) .drill-stage { display: none; }
+.drill-stage { position: relative; }
+
+#drill-prompt {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  text-align: center; color: var(--ink); margin: 8px 0 22px; letter-spacing: 0.01em;
+}
+#drill-prompt .op { color: var(--violet-bright); }
+#drill-prompt small { display: block; font-family: inherit; font-size: 0.95rem; color: var(--ink-faint); margin-top: 10px; letter-spacing: normal; }
+
+#drill-form { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+#drill-input {
+  font: inherit; font-size: 1.3rem; text-align: center;
+  width: 240px; max-width: 100%; padding: 12px 16px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.3); color: var(--ink); outline: none;
+}
+#drill-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,196,81,0.18); }
+#drill-hint { text-align: center; color: var(--ink-faint); font-size: 0.88rem; margin: 10px 0 0; }
+
+.weekday-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; margin-top: 6px; }
+.weekday-button {
+  font: inherit; cursor: pointer; padding: 12px 8px; border-radius: 12px;
+  border: 1px solid rgba(169,139,255,0.35); background: var(--stage-panel-soft); color: var(--ink);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.weekday-button:hover:not(:disabled) { transform: translateY(-1px); background: rgba(139,108,240,0.3); }
+.weekday-button:disabled { opacity: 0.5; cursor: default; }
+
+.drill-feedback { text-align: center; font-size: 1.15rem; min-height: 1.4em; margin: 18px 0 0; font-weight: 600; }
+.drill-feedback.is-correct { color: var(--green); }
+.drill-feedback.is-wrong { color: var(--rose); }
+
+#drill-solution { margin-top: 18px; background: rgba(0,0,0,0.22); border-radius: 12px; padding: 18px; }
+#drill-solution h4 { margin: 0 0 14px; font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+
+#spark-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.spark {
+  position: absolute; top: 40%; width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle, var(--gold-bright), var(--gold));
+  animation: sparkle 0.8s ease-out forwards;
+}
+@keyframes sparkle {
+  0% { opacity: 1; transform: translateY(0) translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-120px) translateX(var(--drift, 0)) scale(0.2); }
+}
+
+.footnote { text-align: center; color: var(--ink-faint); font-size: 0.85rem; margin-top: 12px; }
+
+/* ---- Glossary / dashboard ---- */
+.glossary-hero { text-align: center; margin-bottom: 40px; }
+.glossary-hero h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); }
+.glossary-hero p { color: var(--ink-soft); font-size: 1.12rem; max-width: 620px; margin: 0 auto; }
+.overall { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 14px; margin: 0 auto 44px; max-width: 640px; }
+.chapter-group { margin-bottom: 34px; }
+.chapter-group > h3 {
+  font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--violet-bright);
+  margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(169,139,255,0.22);
+}
+.tech-card {
+  display: block; text-decoration: none; color: inherit;
+  background: linear-gradient(180deg, var(--stage-panel), var(--stage-deep));
+  border: var(--edge); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.tech-card:hover { transform: translateY(-2px); border-color: rgba(245,196,81,0.5); }
+.tech-card .tech-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+.tech-card .tech-title { font-size: 1.18rem; font-weight: 600; color: var(--gold-bright); }
+.tech-card .tech-one-line { color: var(--ink-soft); margin: 6px 0 0; font-size: 0.98rem; }
+.tech-card .tech-stats { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.74rem; color: var(--ink-faint); white-space: nowrap; }
+.tech-card .tech-stats .done { color: var(--green); }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="glossary-hero">
+    <h1>Secrets of Mental Math</h1>
+    <p>Every lightning-calculation secret from the book, each with a lesson you step through and an endless timed drill. Pick one and start.</p>
+  </header>
+
+  <div class="overall">
+    <div class="score"><div class="label">Techniques tried</div><div class="value" id="overall-tried">0 / 42</div></div>
+    <div class="score"><div class="label">Problems solved</div><div class="value" id="overall-solved">0</div></div>
+    <div class="score"><div class="label">Best streak anywhere</div><div class="value" id="overall-streak">0</div></div>
+  </div>
+
+  
+    <div class="chapter-group">
+      <h3>Chapter 1 &middot; Mental Addition &amp; Subtraction</h3>
+      
+      <a class="tech-card" href="left-to-right-addition.html" data-id="left-to-right-addition">
+        <div class="tech-head">
+          <span class="tech-title">Left-to-Right Addition</span>
+          <span class="tech-stats" data-stats="left-to-right-addition"></span>
+        </div>
+        <p class="tech-one-line">Add big numbers the natural way — hundreds first, then tens, then ones.</p>
+      </a>
+      <a class="tech-card" href="left-to-right-subtraction.html" data-id="left-to-right-subtraction">
+        <div class="tech-head">
+          <span class="tech-title">Left-to-Right Subtraction</span>
+          <span class="tech-stats" data-stats="left-to-right-subtraction"></span>
+        </div>
+        <p class="tech-one-line">Subtract from the left; when it gets awkward, over-subtract a round number and give some back.</p>
+      </a>
+      <a class="tech-card" href="complements.html" data-id="complements">
+        <div class="tech-head">
+          <span class="tech-title">Complements</span>
+          <span class="tech-stats" data-stats="complements"></span>
+        </div>
+        <p class="tech-one-line">Find what a 2-digit number needs to reach 100: tens make 9, ones make 10.</p>
+      </a>
+    </div>
+    <div class="chapter-group">
+      <h3>Chapter 2 &middot; Basic Multiplication</h3>
+      
+      <a class="tech-card" href="multiply-by-11.html" data-id="multiply-by-11">
+        <div class="tech-head">
+          <span class="tech-title">Multiplying by 11</span>
+          <span class="tech-stats" data-stats="multiply-by-11"></span>
+        </div>
+        <p class="tech-one-line">Split the two digits apart and drop their sum in the middle.</p>
+      </a>
+      <a class="tech-card" href="squaring-ending-in-5.html" data-id="squaring-ending-in-5">
+        <div class="tech-head">
+          <span class="tech-title">Squaring Numbers Ending in 5</span>
+          <span class="tech-stats" data-stats="squaring-ending-in-5"></span>
+        </div>
+        <p class="tech-one-line">Multiply the lead digit by the next one up, then tack on 25.</p>
+      </a>
+      <a class="tech-card" href="squaring-two-digit.html" data-id="squaring-two-digit">
+        <div class="tech-head">
+          <span class="tech-title">Squaring Any 2-Digit Number</span>
+          <span class="tech-stats" data-stats="squaring-two-digit"></span>
+        </div>
+        <p class="tech-one-line">Round to the nearest 10, multiply the pair, then add the square of how far you moved.</p>
+      </a>
+      <a class="tech-card" href="two-by-one.html" data-id="two-by-one">
+        <div class="tech-head">
+          <span class="tech-title">2-by-1 Multiplication</span>
+          <span class="tech-stats" data-stats="two-by-one"></span>
+        </div>
+        <p class="tech-one-line">Multiply the tens, multiply the ones, add the two left to right.</p>
+      </a>
+      <a class="tech-card" href="three-by-one.html" data-id="three-by-one">
+        <div class="tech-head">
+          <span class="tech-title">3-by-1 Multiplication</span>
+          <span class="tech-stats" data-stats="three-by-one"></span>
+        </div>
+        <p class="tech-one-line">Hundreds, tens, ones — multiply each by the digit and add as you go.</p>
+      </a>
+    </div>
+    <div class="chapter-group">
+      <h3>Chapter 3 &middot; Intermediate Multiplication</h3>
+      
+      <a class="tech-card" href="two-by-two-addition.html" data-id="two-by-two-addition">
+        <div class="tech-head">
+          <span class="tech-title">2-by-2: Addition Method</span>
+          <span class="tech-stats" data-stats="two-by-two-addition"></span>
+        </div>
+        <p class="tech-one-line">Split one number into tens and ones, multiply each by the whole other number, add.</p>
+      </a>
+      <a class="tech-card" href="two-by-two-subtraction.html" data-id="two-by-two-subtraction">
+        <div class="tech-head">
+          <span class="tech-title">2-by-2: Subtraction Method</span>
+          <span class="tech-stats" data-stats="two-by-two-subtraction"></span>
+        </div>
+        <p class="tech-one-line">When a number ends in 8 or 9, round it up, multiply, then subtract the overshoot.</p>
+      </a>
+      <a class="tech-card" href="two-by-two-factoring.html" data-id="two-by-two-factoring">
+        <div class="tech-head">
+          <span class="tech-title">2-by-2: Factoring Method</span>
+          <span class="tech-stats" data-stats="two-by-two-factoring"></span>
+        </div>
+        <p class="tech-one-line">Break one number into single-digit factors, then multiply in a chain.</p>
+      </a>
+      <a class="tech-card" href="two-digit-cubing.html" data-id="two-digit-cubing">
+        <div class="tech-head">
+          <span class="tech-title">Cubing a 2-Digit Number</span>
+          <span class="tech-stats" data-stats="two-digit-cubing"></span>
+        </div>
+        <p class="tech-one-line">Use A³ = (A−d)·A·(A+d) + d²·A, rounding to the nearest 10.</p>
+      </a>
+    </div>
+    <div class="chapter-group">
+      <h3>Chapter 4 &middot; Mental Division</h3>
+      
+      <a class="tech-card" href="one-digit-division.html" data-id="one-digit-division">
+        <div class="tech-head">
+          <span class="tech-title">Division by One Digit</span>
+          <span class="tech-stats" data-stats="one-digit-division"></span>
+        </div>
+        <p class="tech-one-line">Long division done left to right, taking the biggest easy chunk each time.</p>
+      </a>
+      <a class="tech-card" href="two-digit-division.html" data-id="two-digit-division">
+        <div class="tech-head">
+          <span class="tech-title">Division by Two Digits</span>
+          <span class="tech-stats" data-stats="two-digit-division"></span>
+        </div>
+        <p class="tech-one-line">Guess the lead digit from the divisor times tens, subtract, repeat.</p>
+      </a>
+      <a class="tech-card" href="fraction-to-decimal.html" data-id="fraction-to-decimal">
+        <div class="tech-head">
+          <span class="tech-title">Fractions to Decimals</span>
+          <span class="tech-stats" data-stats="fraction-to-decimal"></span>
+        </div>
+        <p class="tech-one-line">Memorize the one-digit denominators — especially the 1/7 cycle 142857.</p>
+      </a>
+      <a class="tech-card" href="divisible-by-3.html" data-id="divisible-by-3">
+        <div class="tech-head">
+          <span class="tech-title">Divisibility by 3</span>
+          <span class="tech-stats" data-stats="divisible-by-3"></span>
+        </div>
+        <p class="tech-one-line">A number divides by 3 exactly when its digit sum does.</p>
+      </a>
+      <a class="tech-card" href="divisible-by-9.html" data-id="divisible-by-9">
+        <div class="tech-head">
+          <span class="tech-title">Divisibility by 9</span>
+          <span class="tech-stats" data-stats="divisible-by-9"></span>
+        </div>
+        <p class="tech-one-line">A number divides by 9 exactly when its digit sum does.</p>
+      </a>
+      <a class="tech-card" href="divisible-by-2.html" data-id="divisible-by-2">
+        <div class="tech-head">
+          <span class="tech-title">Divisibility by 2</span>
+          <span class="tech-stats" data-stats="divisible-by-2"></span>
+        </div>
+        <p class="tech-one-line">Even last digit, even number.</p>
+      </a>
+      <a class="tech-card" href="divisible-by-4.html" data-id="divisible-by-4">
+        <div class="tech-head">
+          <span class="tech-title">Divisibility by 4</span>
+          <span class="tech-stats" data-stats="divisible-by-4"></span>
+        </div>
+        <p class="tech-one-line">Check just the last two digits.</p>
+      </a>
+      <a class="tech-card" href="divisible-by-8.html" data-id="divisible-by-8">
+        <div class="tech-head">
+          <span class="tech-title">Divisibility by 8</span>
+          <span class="tech-stats" data-stats="divisible-by-8"></span>
+        </div>
+        <p class="tech-one-line">Check just the last three digits.</p>
+      </a>
+      <a class="tech-card" href="divisible-by-5.html" data-id="divisible-by-5">
+        <div class="tech-head">
+          <span class="tech-title">Divisibility by 5</span>
+          <span class="tech-stats" data-stats="divisible-by-5"></span>
+        </div>
+        <p class="tech-one-line">Last digit 0 or 5.</p>
+      </a>
+      <a class="tech-card" href="divisible-by-6.html" data-id="divisible-by-6">
+        <div class="tech-head">
+          <span class="tech-title">Divisibility by 6</span>
+          <span class="tech-stats" data-stats="divisible-by-6"></span>
+        </div>
+        <p class="tech-one-line">Must pass both the 2 test and the 3 test.</p>
+      </a>
+      <a class="tech-card" href="divisible-by-11.html" data-id="divisible-by-11">
+        <div class="tech-head">
+          <span class="tech-title">Divisibility by 11</span>
+          <span class="tech-stats" data-stats="divisible-by-11"></span>
+        </div>
+        <p class="tech-one-line">Alternately add and subtract the digits; check the result.</p>
+      </a>
+    </div>
+    <div class="chapter-group">
+      <h3>Chapter 5 &middot; The Art of Guesstimation</h3>
+      
+      <a class="tech-card" href="estimate-multiplication.html" data-id="estimate-multiplication">
+        <div class="tech-head">
+          <span class="tech-title">Guesstimating Products</span>
+          <span class="tech-stats" data-stats="estimate-multiplication"></span>
+        </div>
+        <p class="tech-one-line">Round one number up and the other down, multiply the easy pair.</p>
+      </a>
+      <a class="tech-card" href="estimate-square-root.html" data-id="estimate-square-root">
+        <div class="tech-head">
+          <span class="tech-title">Estimating Square Roots</span>
+          <span class="tech-stats" data-stats="estimate-square-root"></span>
+        </div>
+        <p class="tech-one-line">Guess from a nearby perfect square, divide, and average the two.</p>
+      </a>
+      <a class="tech-card" href="tips.html" data-id="tips">
+        <div class="tech-head">
+          <span class="tech-title">Tips in Your Head</span>
+          <span class="tech-stats" data-stats="tips"></span>
+        </div>
+        <p class="tech-one-line">10% is a decimal shift; build 15%, 20%, 25% from it.</p>
+      </a>
+      <a class="tech-card" href="sales-tax.html" data-id="sales-tax">
+        <div class="tech-head">
+          <span class="tech-title">Sales Tax in Your Head</span>
+          <span class="tech-stats" data-stats="sales-tax"></span>
+        </div>
+        <p class="tech-one-line">Do the whole-percent part, then add the half/quarter-percent as cents.</p>
+      </a>
+      <a class="tech-card" href="rule-of-70.html" data-id="rule-of-70">
+        <div class="tech-head">
+          <span class="tech-title">Rule of 70 (and 110)</span>
+          <span class="tech-stats" data-stats="rule-of-70"></span>
+        </div>
+        <p class="tech-one-line">Divide 70 by the interest rate for doubling time; 110 for tripling.</p>
+      </a>
+    </div>
+    <div class="chapter-group">
+      <h3>Chapter 6 &middot; Pencil-and-Paper Math</h3>
+      
+      <a class="tech-card" href="casting-out-nines.html" data-id="casting-out-nines">
+        <div class="tech-head">
+          <span class="tech-title">Casting Out Nines</span>
+          <span class="tech-stats" data-stats="casting-out-nines"></span>
+        </div>
+        <p class="tech-one-line">Reduce each number to its digit-sum and check the arithmetic survives.</p>
+      </a>
+      <a class="tech-card" href="casting-out-elevens.html" data-id="casting-out-elevens">
+        <div class="tech-head">
+          <span class="tech-title">Casting Out Elevens</span>
+          <span class="tech-stats" data-stats="casting-out-elevens"></span>
+        </div>
+        <p class="tech-one-line">Alternately subtract and add digits from the right, reduce mod 11.</p>
+      </a>
+      <a class="tech-card" href="criss-cross-multiplication.html" data-id="criss-cross-multiplication">
+        <div class="tech-head">
+          <span class="tech-title">Criss-Cross Multiplication</span>
+          <span class="tech-stats" data-stats="criss-cross-multiplication"></span>
+        </div>
+        <p class="tech-one-line">Write a big product on one line by summing digit cross-products diagonally.</p>
+      </a>
+      <a class="tech-card" href="pencil-square-root.html" data-id="pencil-square-root">
+        <div class="tech-head">
+          <span class="tech-title">Square Roots on Paper</span>
+          <span class="tech-stats" data-stats="pencil-square-root"></span>
+        </div>
+        <p class="tech-one-line">Extract a root digit by digit with a long-division-style doubling routine.</p>
+      </a>
+    </div>
+    <div class="chapter-group">
+      <h3>Chapter 7 &middot; Memorizing Numbers</h3>
+      
+      <a class="tech-card" href="phonetic-code.html" data-id="phonetic-code">
+        <div class="tech-head">
+          <span class="tech-title">The Phonetic Code</span>
+          <span class="tech-stats" data-stats="phonetic-code"></span>
+        </div>
+        <p class="tech-one-line">Turn each digit into a consonant sound so numbers become words you can picture.</p>
+      </a>
+      <a class="tech-card" href="phonetic-decode.html" data-id="phonetic-decode">
+        <div class="tech-head">
+          <span class="tech-title">Decoding Words to Numbers</span>
+          <span class="tech-stats" data-stats="phonetic-decode"></span>
+        </div>
+        <p class="tech-one-line">Read a word's consonant sounds back as digits — the reverse of the code.</p>
+      </a>
+    </div>
+    <div class="chapter-group">
+      <h3>Chapter 8 &middot; Advanced Multiplication</h3>
+      
+      <a class="tech-card" href="three-digit-squaring.html" data-id="three-digit-squaring">
+        <div class="tech-head">
+          <span class="tech-title">Squaring a 3-Digit Number</span>
+          <span class="tech-stats" data-stats="three-digit-squaring"></span>
+        </div>
+        <p class="tech-one-line">Round to the nearest 100, multiply the pair, add the square of the distance.</p>
+      </a>
+      <a class="tech-card" href="three-by-two.html" data-id="three-by-two">
+        <div class="tech-head">
+          <span class="tech-title">3-by-2 Multiplication</span>
+          <span class="tech-stats" data-stats="three-by-two"></span>
+        </div>
+        <p class="tech-one-line">Factor the 2-digit number and chain, or round it and adjust.</p>
+      </a>
+      <a class="tech-card" href="three-by-three.html" data-id="three-by-three">
+        <div class="tech-head">
+          <span class="tech-title">3-by-3 Multiplication</span>
+          <span class="tech-stats" data-stats="three-by-three"></span>
+        </div>
+        <p class="tech-one-line">Break one number into hundreds/tens/ones (or use a close-together base) and sum.</p>
+      </a>
+    </div>
+    <div class="chapter-group">
+      <h3>Chapter 9 &middot; The Art of Mathematical Magic</h3>
+      
+      <a class="tech-card" href="day-of-week.html" data-id="day-of-week">
+        <div class="tech-head">
+          <span class="tech-title">Day of the Week for Any Date</span>
+          <span class="tech-stats" data-stats="day-of-week"></span>
+        </div>
+        <p class="tech-one-line">Add a month code, the date, and a year code; reduce mod 7 to a weekday.</p>
+      </a>
+      <a class="tech-card" href="quick-cube-roots.html" data-id="quick-cube-roots">
+        <div class="tech-head">
+          <span class="tech-title">Instant Cube Roots</span>
+          <span class="tech-stats" data-stats="quick-cube-roots"></span>
+        </div>
+        <p class="tech-one-line">Get the tens digit from the magnitude, the ones digit from the last digit.</p>
+      </a>
+      <a class="tech-card" href="quick-square-roots.html" data-id="quick-square-roots">
+        <div class="tech-head">
+          <span class="tech-title">Instant Square Roots</span>
+          <span class="tech-stats" data-stats="quick-square-roots"></span>
+        </div>
+        <p class="tech-one-line">Tens digit from magnitude, two ones-digit candidates, then a midpoint test.</p>
+      </a>
+      <a class="tech-card" href="missing-digit.html" data-id="missing-digit">
+        <div class="tech-head">
+          <span class="tech-title">The Missing-Digit Trick</span>
+          <span class="tech-stats" data-stats="missing-digit"></span>
+        </div>
+        <p class="tech-one-line">From a multiple of 9, the digits called out reveal the one held back.</p>
+      </a>
+      <a class="tech-card" href="magic-1089.html" data-id="magic-1089">
+        <div class="tech-head">
+          <span class="tech-title">The Magic 1089</span>
+          <span class="tech-stats" data-stats="magic-1089"></span>
+        </div>
+        <p class="tech-one-line">Reverse-subtract a descending 3-digit number, reverse-add the result: always 1089.</p>
+      </a>
+    </div>
+
+  <p class="footnote">From <i>Secrets of Mental Math</i> by Arthur Benjamin &amp; Michael Shermer. Progress is saved in this browser only.</p>
+</div>
+
+<script>
+(function paintDashboard() {
+  var ids = ["left-to-right-addition","left-to-right-subtraction","complements","multiply-by-11","squaring-ending-in-5","squaring-two-digit","two-by-one","three-by-one","two-by-two-addition","two-by-two-subtraction","two-by-two-factoring","two-digit-cubing","one-digit-division","two-digit-division","fraction-to-decimal","divisible-by-3","divisible-by-9","divisible-by-2","divisible-by-4","divisible-by-8","divisible-by-5","divisible-by-6","divisible-by-11","estimate-multiplication","estimate-square-root","tips","sales-tax","rule-of-70","casting-out-nines","casting-out-elevens","criss-cross-multiplication","pencil-square-root","phonetic-code","phonetic-decode","three-digit-squaring","three-by-two","three-by-three","day-of-week","quick-cube-roots","quick-square-roots","missing-digit","magic-1089"];
+  var tried = 0, solvedTotal = 0, bestStreak = 0;
+  ids.forEach(function (id) {
+    var raw = null;
+    try { raw = window.localStorage.getItem("secrets-of-mental-math:" + id); } catch (e) {}
+    var stats = raw ? JSON.parse(raw) : null;
+    var cell = document.querySelector('[data-stats="' + id + '"]');
+    if (stats && (stats.solvedTotal || stats.bestStreak)) {
+      tried += 1;
+      solvedTotal += stats.solvedTotal || 0;
+      if ((stats.bestStreak || 0) > bestStreak) bestStreak = stats.bestStreak;
+      var fastest = stats.fastestMilliseconds == null ? "--" : (stats.fastestMilliseconds / 1000).toFixed(1) + "s";
+      if (cell) cell.innerHTML = '<span class="done">' + (stats.solvedTotal || 0) + ' solved</span> &middot; streak ' + (stats.bestStreak || 0) + ' &middot; ' + fastest;
+    } else if (cell) {
+      cell.textContent = "not started";
+    }
+  });
+  document.getElementById("overall-tried").textContent = tried + " / " + ids.length;
+  document.getElementById("overall-solved").textContent = solvedTotal.toLocaleString("en-US");
+  document.getElementById("overall-streak").textContent = String(bestStreak);
+})();
+</script>
+</body>
+</html>

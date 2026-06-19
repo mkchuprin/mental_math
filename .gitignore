@@ -1,0 +1,6 @@
+.DS_Store
+node_modules/
+
+# Source book text is a copyrighted work (Benjamin & Shermer) — kept local, not redistributed.
+# The site only quotes short worked examples; the generator does not need this at runtime.
+docs/book.txt

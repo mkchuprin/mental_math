@@ -1,0 +1,260 @@
+// Shared front-end engine inlined into every technique page.
+// A page defines a global `TECHNIQUE` object before this script runs. Shape:
+//   {
+//     id, title, chapter, oneLine, covers,
+//     teachSteps: [{ text, math }],            // interactive step-through (revealed one at a time)
+//     makeProblem(),                            // returns a problem object the other hooks understand
+//     promptHtml(problem),                      // the question shown to the solver
+//     checkAnswer(problem, rawInput),           // -> { correct: bool, expected: string }
+//     solutionSteps(problem),                   // -> [{ text, math }] full worked solution for a missed problem
+//     inputMode,                                // "number" | "text" | "weekday" | "grid"
+//     inputHint,                                // placeholder / helper text under the answer box
+//   }
+
+(function bootTechniquePage() {
+  const technique = window.TECHNIQUE;
+  const storageKey = "secrets-of-mental-math:" + technique.id;
+
+  const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  function readSavedBests() {
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return { bestStreak: 0, solvedTotal: 0, fastestMilliseconds: null };
+      const parsed = JSON.parse(raw);
+      return {
+        bestStreak: parsed.bestStreak || 0,
+        solvedTotal: parsed.solvedTotal || 0,
+        fastestMilliseconds: parsed.fastestMilliseconds == null ? null : parsed.fastestMilliseconds,
+      };
+    } catch (error) {
+      return { bestStreak: 0, solvedTotal: 0, fastestMilliseconds: null };
+    }
+  }
+
+  function writeSavedBests(bests) {
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(bests));
+    } catch (error) {
+      // localStorage may be unavailable (private mode); progress simply will not persist.
+    }
+  }
+
+  function formatMilliseconds(milliseconds) {
+    if (milliseconds == null) return "--";
+    return (milliseconds / 1000).toFixed(1) + "s";
+  }
+
+  function renderMathFragments(container, fragments) {
+    container.innerHTML = "";
+    fragments.forEach(function appendFragment(fragment) {
+      const block = document.createElement("div");
+      block.className = "step-line";
+      if (fragment.text) {
+        const text = document.createElement("p");
+        text.className = "step-text";
+        text.innerHTML = fragment.text;
+        block.appendChild(text);
+      }
+      if (fragment.math) {
+        const math = document.createElement("div");
+        math.className = "step-math";
+        math.textContent = fragment.math;
+        block.appendChild(math);
+      }
+      container.appendChild(block);
+    });
+  }
+
+  // ---- Teach section: reveal one step at a time -------------------------------
+  let revealedStepCount = 0;
+  const teachContainer = document.getElementById("teach-steps");
+  const teachNextButton = document.getElementById("teach-next");
+  const teachResetButton = document.getElementById("teach-reset");
+
+  function renderTeachSteps() {
+    const shown = technique.teachSteps.slice(0, revealedStepCount);
+    renderMathFragments(teachContainer, shown);
+    const allShown = revealedStepCount >= technique.teachSteps.length;
+    teachNextButton.textContent = revealedStepCount === 0 ? "Show first step" : allShown ? "All steps shown" : "Next step";
+    teachNextButton.disabled = allShown;
+    teachResetButton.style.display = revealedStepCount === 0 ? "none" : "inline-flex";
+  }
+
+  teachNextButton.addEventListener("click", function advanceTeachStep() {
+    if (revealedStepCount < technique.teachSteps.length) revealedStepCount += 1;
+    renderTeachSteps();
+  });
+  teachResetButton.addEventListener("click", function resetTeachSteps() {
+    revealedStepCount = 0;
+    renderTeachSteps();
+  });
+
+  // ---- Test section: timed, scored drills -------------------------------------
+  const promptContainer = document.getElementById("drill-prompt");
+  const answerForm = document.getElementById("drill-form");
+  const answerInput = document.getElementById("drill-input");
+  const answerHint = document.getElementById("drill-hint");
+  const feedbackContainer = document.getElementById("drill-feedback");
+  const solutionContainer = document.getElementById("drill-solution");
+  const nextProblemButton = document.getElementById("drill-next");
+  const startButton = document.getElementById("drill-start");
+  const drillPanel = document.getElementById("drill-panel");
+
+  const streakValue = document.getElementById("stat-streak");
+  const solvedValue = document.getElementById("stat-solved");
+  const timerValue = document.getElementById("stat-timer");
+  const bestStreakValue = document.getElementById("stat-best-streak");
+  const bestSolvedValue = document.getElementById("stat-best-solved");
+  const bestTimeValue = document.getElementById("stat-best-time");
+
+  let currentProblem = null;
+  let currentStreak = 0;
+  let sessionSolved = 0;
+  let problemStartedAt = 0;
+  let tickHandle = null;
+  let bests = readSavedBests();
+
+  function paintBests() {
+    bestStreakValue.textContent = String(bests.bestStreak);
+    bestSolvedValue.textContent = String(bests.solvedTotal);
+    bestTimeValue.textContent = formatMilliseconds(bests.fastestMilliseconds);
+  }
+
+  function paintSessionStats() {
+    streakValue.textContent = String(currentStreak);
+    solvedValue.textContent = String(sessionSolved);
+  }
+
+  function stopTimer() {
+    if (tickHandle != null) {
+      window.clearInterval(tickHandle);
+      tickHandle = null;
+    }
+  }
+
+  function startTimer() {
+    stopTimer();
+    problemStartedAt = performance.now();
+    timerValue.textContent = "0.0s";
+    tickHandle = window.setInterval(function tick() {
+      timerValue.textContent = formatMilliseconds(performance.now() - problemStartedAt);
+    }, 100);
+  }
+
+  function buildWeekdayInput() {
+    const wrap = document.createElement("div");
+    wrap.className = "weekday-grid";
+    weekdayNames.forEach(function addButton(name) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "weekday-button";
+      button.textContent = name;
+      button.addEventListener("click", function pickWeekday() {
+        submitAnswer(name);
+      });
+      wrap.appendChild(button);
+    });
+    return wrap;
+  }
+
+  function presentProblem() {
+    currentProblem = technique.makeProblem();
+    promptContainer.innerHTML = technique.promptHtml(currentProblem);
+    feedbackContainer.textContent = "";
+    feedbackContainer.className = "drill-feedback";
+    solutionContainer.innerHTML = "";
+    solutionContainer.style.display = "none";
+    nextProblemButton.style.display = "none";
+
+    const existingWeekday = document.getElementById("weekday-input");
+    if (existingWeekday) existingWeekday.remove();
+
+    if (technique.inputMode === "weekday") {
+      answerForm.style.display = "none";
+      const grid = buildWeekdayInput();
+      grid.id = "weekday-input";
+      promptContainer.insertAdjacentElement("afterend", grid);
+    } else {
+      answerForm.style.display = "flex";
+      answerInput.value = "";
+      answerInput.disabled = false;
+      answerInput.setAttribute("inputmode", technique.inputMode === "number" ? "decimal" : "text");
+      answerHint.textContent = technique.inputHint || "";
+      answerInput.focus();
+    }
+    startTimer();
+  }
+
+  function lockProblemInputs() {
+    answerInput.disabled = true;
+    const weekday = document.getElementById("weekday-input");
+    if (weekday) weekday.querySelectorAll("button").forEach(function disable(button) { button.disabled = true; });
+  }
+
+  function celebrate() {
+    const layer = document.getElementById("spark-layer");
+    for (let index = 0; index < 14; index += 1) {
+      const spark = document.createElement("span");
+      spark.className = "spark";
+      spark.style.left = (10 + Math.random() * 80) + "%";
+      spark.style.setProperty("--drift", (Math.random() * 80 - 40) + "px");
+      spark.style.animationDelay = (Math.random() * 0.12) + "s";
+      layer.appendChild(spark);
+      window.setTimeout(function removeSpark() { spark.remove(); }, 900);
+    }
+  }
+
+  function submitAnswer(rawInput) {
+    if (currentProblem == null) return;
+    const elapsed = performance.now() - problemStartedAt;
+    stopTimer();
+    const verdict = technique.checkAnswer(currentProblem, rawInput);
+    lockProblemInputs();
+
+    if (verdict.correct) {
+      currentStreak += 1;
+      sessionSolved += 1;
+      bests.solvedTotal += 1;
+      if (currentStreak > bests.bestStreak) bests.bestStreak = currentStreak;
+      if (bests.fastestMilliseconds == null || elapsed < bests.fastestMilliseconds) bests.fastestMilliseconds = elapsed;
+      writeSavedBests(bests);
+      feedbackContainer.textContent = "Correct  -  " + formatMilliseconds(elapsed) + (verdict.detail ? "  -  " + verdict.detail : "");
+      feedbackContainer.className = "drill-feedback is-correct";
+      celebrate();
+    } else {
+      currentStreak = 0;
+      feedbackContainer.textContent = verdict.detail ? "Not quite.  " + verdict.detail : "Not quite. The answer is " + verdict.expected + ".";
+      feedbackContainer.className = "drill-feedback is-wrong";
+      const heading = document.createElement("h4");
+      heading.textContent = "How to get it";
+      solutionContainer.appendChild(heading);
+      const stepsHost = document.createElement("div");
+      renderMathFragments(stepsHost, technique.solutionSteps(currentProblem));
+      solutionContainer.appendChild(stepsHost);
+      solutionContainer.style.display = "block";
+    }
+
+    paintSessionStats();
+    paintBests();
+    nextProblemButton.style.display = "inline-flex";
+    nextProblemButton.focus();
+  }
+
+  answerForm.addEventListener("submit", function onSubmit(event) {
+    event.preventDefault();
+    if (answerInput.disabled) return;
+    if (answerInput.value.trim() === "") return;
+    submitAnswer(answerInput.value);
+  });
+  nextProblemButton.addEventListener("click", presentProblem);
+  startButton.addEventListener("click", function beginDrills() {
+    drillPanel.classList.add("is-active");
+    startButton.style.display = "none";
+    presentProblem();
+  });
+
+  paintSessionStats();
+  paintBests();
+  renderTeachSteps();
+})();

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule of 70 (and 110) - Secrets of Mental Math</title>
+<style>
+:root {
+  --stage-black: #0b0b16;
+  --stage-deep: #15132a;
+  --stage-panel: #1d1b38;
+  --stage-panel-soft: #26244a;
+  --ink: #f4f1ff;
+  --ink-soft: #b9b4d8;
+  --ink-faint: #837ea8;
+  --gold: #f5c451;
+  --gold-bright: #ffd97a;
+  --violet: #8b6cf0;
+  --violet-bright: #a98bff;
+  --teal: #54d6c2;
+  --rose: #ff6f8f;
+  --green: #5fd38a;
+  --radius: 16px;
+  --edge: 1px solid rgba(255, 255, 255, 0.08);
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+  font-family: "Iowan Old Style", "Palatino Linotype", "Georgia", serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(139, 108, 240, 0.22), transparent 60%),
+    radial-gradient(900px 500px at 90% 10%, rgba(245, 196, 81, 0.10), transparent 55%),
+    var(--stage-black);
+  line-height: 1.5;
+}
+
+.wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 96px; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+.topbar a { color: var(--gold); text-decoration: none; font-size: 0.95rem; letter-spacing: 0.02em; }
+.topbar a:hover { color: var(--gold-bright); }
+.chapter-chip {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--violet-bright);
+  border: 1px solid rgba(169, 139, 255, 0.4);
+  padding: 5px 11px;
+  border-radius: 999px;
+}
+
+header.hero { margin-bottom: 36px; }
+header.hero h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  margin: 0 0 12px;
+  background: linear-gradient(120deg, var(--gold-bright), var(--violet-bright));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.01em;
+}
+header.hero .one-line { font-size: 1.18rem; color: var(--ink-soft); margin: 0 0 6px; }
+header.hero .covers { font-size: 0.98rem; color: var(--ink-faint); margin: 0; }
+
+section.card {
+  background: linear-gradient(180deg, var(--stage-panel), var(--stage-deep));
+  border: var(--edge);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+  margin-bottom: 28px;
+}
+section.card > h2 {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--gold); margin: 0 0 18px;
+}
+section.card > h2 .glyph { font-size: 1.1rem; }
+
+.step-line {
+  border-left: 3px solid rgba(169, 139, 255, 0.5);
+  padding: 4px 0 4px 16px;
+  margin: 0 0 14px;
+  animation: rise 0.4s ease;
+}
+.step-line:last-child { margin-bottom: 0; }
+.step-text { margin: 0 0 6px; color: var(--ink); }
+.step-text:last-child { margin-bottom: 0; }
+.step-math {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 1.12rem;
+  color: var(--gold-bright);
+  background: rgba(0, 0, 0, 0.28);
+  padding: 8px 12px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: inherit; font-size: 0.98rem; cursor: pointer;
+  border: none; border-radius: 999px; padding: 11px 22px;
+  color: var(--stage-black); background: linear-gradient(120deg, var(--gold), var(--gold-bright));
+  font-weight: 600; letter-spacing: 0.01em; transition: transform 0.12s ease, filter 0.12s ease;
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid rgba(255,255,255,0.18); }
+.btn.ghost:hover { color: var(--ink); }
+.btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+
+.scoreboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+.score { background: rgba(0,0,0,0.25); border: var(--edge); border-radius: 12px; padding: 12px 14px; text-align: center; }
+.score .label { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.score .value { font-size: 1.5rem; font-weight: 700; color: var(--ink); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.score.is-timer .value { color: var(--teal); }
+.bests { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+.bests .score .value { font-size: 1.15rem; color: var(--gold-bright); }
+
+#drill-panel { position: relative; }
+#drill-panel:not(.is-active) .drill-stage { display: none; }
+.drill-stage { position: relative; }
+
+#drill-prompt {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  text-align: center; color: var(--ink); margin: 8px 0 22px; letter-spacing: 0.01em;
+}
+#drill-prompt .op { color: var(--violet-bright); }
+#drill-prompt small { display: block; font-family: inherit; font-size: 0.95rem; color: var(--ink-faint); margin-top: 10px; letter-spacing: normal; }
+
+#drill-form { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+#drill-input {
+  font: inherit; font-size: 1.3rem; text-align: center;
+  width: 240px; max-width: 100%; padding: 12px 16px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.3); color: var(--ink); outline: none;
+}
+#drill-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,196,81,0.18); }
+#drill-hint { text-align: center; color: var(--ink-faint); font-size: 0.88rem; margin: 10px 0 0; }
+
+.weekday-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; margin-top: 6px; }
+.weekday-button {
+  font: inherit; cursor: pointer; padding: 12px 8px; border-radius: 12px;
+  border: 1px solid rgba(169,139,255,0.35); background: var(--stage-panel-soft); color: var(--ink);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.weekday-button:hover:not(:disabled) { transform: translateY(-1px); background: rgba(139,108,240,0.3); }
+.weekday-button:disabled { opacity: 0.5; cursor: default; }
+
+.drill-feedback { text-align: center; font-size: 1.15rem; min-height: 1.4em; margin: 18px 0 0; font-weight: 600; }
+.drill-feedback.is-correct { color: var(--green); }
+.drill-feedback.is-wrong { color: var(--rose); }
+
+#drill-solution { margin-top: 18px; background: rgba(0,0,0,0.22); border-radius: 12px; padding: 18px; }
+#drill-solution h4 { margin: 0 0 14px; font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+
+#spark-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.spark {
+  position: absolute; top: 40%; width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle, var(--gold-bright), var(--gold));
+  animation: sparkle 0.8s ease-out forwards;
+}
+@keyframes sparkle {
+  0% { opacity: 1; transform: translateY(0) translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-120px) translateX(var(--drift, 0)) scale(0.2); }
+}
+
+.footnote { text-align: center; color: var(--ink-faint); font-size: 0.85rem; margin-top: 12px; }
+
+/* ---- Glossary / dashboard ---- */
+.glossary-hero { text-align: center; margin-bottom: 40px; }
+.glossary-hero h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); }
+.glossary-hero p { color: var(--ink-soft); font-size: 1.12rem; max-width: 620px; margin: 0 auto; }
+.overall { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 14px; margin: 0 auto 44px; max-width: 640px; }
+.chapter-group { margin-bottom: 34px; }
+.chapter-group > h3 {
+  font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--violet-bright);
+  margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(169,139,255,0.22);
+}
+.tech-card {
+  display: block; text-decoration: none; color: inherit;
+  background: linear-gradient(180deg, var(--stage-panel), var(--stage-deep));
+  border: var(--edge); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.tech-card:hover { transform: translateY(-2px); border-color: rgba(245,196,81,0.5); }
+.tech-card .tech-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+.tech-card .tech-title { font-size: 1.18rem; font-weight: 600; color: var(--gold-bright); }
+.tech-card .tech-one-line { color: var(--ink-soft); margin: 6px 0 0; font-size: 0.98rem; }
+.tech-card .tech-stats { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.74rem; color: var(--ink-faint); white-space: nowrap; }
+.tech-card .tech-stats .done { color: var(--green); }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="glossary.html">&#8592; All techniques</a>
+    <span class="chapter-chip">Chapter 5 &middot; The Art of Guesstimation</span>
+  </div>
+
+  <header class="hero">
+    <h1>Rule of 70 (and 110)</h1>
+    <p class="one-line">Divide 70 by the interest rate for doubling time; 110 for tripling.</p>
+    <p class="covers">Estimating how long money takes to double or triple at a compound interest rate.</p>
+  </header>
+
+  <section class="card">
+    <h2><span class="glyph">&#9788;</span> Learn the secret</h2>
+    <div id="teach-steps"></div>
+    <div class="btn-row">
+      <button id="teach-next" class="btn">Show first step</button>
+      <button id="teach-reset" class="btn ghost" style="display:none">Start over</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="glyph">&#9876;</span> Test yourself</h2>
+    <div class="bests">
+      <div class="score"><div class="label">Best streak</div><div class="value" id="stat-best-streak">0</div></div>
+      <div class="score"><div class="label">Total solved</div><div class="value" id="stat-best-solved">0</div></div>
+      <div class="score"><div class="label">Fastest</div><div class="value" id="stat-best-time">--</div></div>
+    </div>
+    <div id="drill-panel">
+      <button id="drill-start" class="btn">Start drilling</button>
+      <div class="drill-stage">
+        <div id="spark-layer"></div>
+        <div class="scoreboard">
+          <div class="score"><div class="label">Streak</div><div class="value" id="stat-streak">0</div></div>
+          <div class="score"><div class="label">This session</div><div class="value" id="stat-solved">0</div></div>
+          <div class="score is-timer"><div class="label">Timer</div><div class="value" id="stat-timer">0.0s</div></div>
+        </div>
+        <div id="drill-prompt"></div>
+        <form id="drill-form" autocomplete="off">
+          <input id="drill-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" />
+          <button type="submit" class="btn">Check</button>
+        </form>
+        <p id="drill-hint"></p>
+        <div id="drill-feedback" class="drill-feedback"></div>
+        <div id="drill-solution" style="display:none"></div>
+        <div class="btn-row" style="justify-content:center">
+          <button id="drill-next" class="btn ghost" style="display:none">Next problem &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="footnote">From <i>Secrets of Mental Math</i> by Arthur Benjamin &amp; Michael Shermer. Practice page &mdash; progress saved in this browser only.</p>
+</div>
+
+<script>
+
+var H = {
+  randInt: function randInt(low, high) { return low + Math.floor(Math.random() * (high - low + 1)); },
+  pick: function pick(list) { return list[Math.floor(Math.random() * list.length)]; },
+  digits: function digits(value) { return String(value).split("").map(Number); },
+  digitSum: function digitSum(value) { return H.digits(Math.abs(value)).reduce(function (a, b) { return a + b; }, 0); },
+  modSum: function modSum(value) { var n = Math.abs(value); while (n > 9) n = H.digitSum(n); return n; },
+  commas: function commas(value) { return value.toLocaleString("en-US"); },
+  complement100: function complement100(value) { return (100 - value) % 100; },
+  weekdayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+  trueWeekday: function trueWeekday(year, month, day) {
+    var t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+    var y = year;
+    if (month < 3) y -= 1;
+    return ((y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) + t[month - 1] + day) % 7 + 7) % 7;
+  },
+  isLeap: function isLeap(year) { return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0; },
+  monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+  monthCodes: [6, 2, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4],
+  phoneticDigitsOfWord: function phoneticDigitsOfWord(word) {
+    var lowered = word.toLowerCase().replace(/[^a-z]/g, "");
+    var out = [];
+    var index = 0;
+    while (index < lowered.length) {
+      var two = lowered.slice(index, index + 2);
+      var one = lowered[index];
+      if (two === "ch" || two === "sh") { out.push(6); index += 2; continue; }
+      if (two === "ck") { out.push(7); index += 2; continue; }
+      var map = { t: 1, d: 1, n: 2, m: 3, r: 4, l: 5, j: 6, g: 7, k: 7, c: 7, q: 7, f: 8, v: 8, p: 9, b: 9, z: 0, s: 0, x: 0 };
+      if ("aeiouhwy".indexOf(one) !== -1) { index += 1; continue; }
+      if (map[one] !== undefined) {
+        if (out.length && map[one] === out[out.length - 1] && lowered[index - 1] === one) { index += 1; continue; }
+        out.push(map[one]);
+      }
+      index += 1;
+    }
+    return out;
+  }
+};
+
+window.TECHNIQUE = {
+  "id": "rule-of-70",
+  "title": "Rule of 70 (and 110)",
+  "chapter": 5,
+  "chapterTitle": "The Art of Guesstimation",
+  "oneLine": "Divide 70 by the interest rate for doubling time; 110 for tripling.",
+  "covers": "Estimating how long money takes to double or triple at a compound interest rate.",
+  "inputMode": "number",
+  "inputHint": "Type the number of years.",
+  "teachSteps": [{"text":"Money growing at a steady percent doubles in about <b>70 ÷ rate</b> years."},{"text":"At 5% a year:","math":"70 / 5 = 14 years to double"},{"text":"To triple, use 110 instead of 70.","math":"110 / 5 = 22 years to triple"},{"text":"These are close approximations to the real compound-interest answer, accurate enough for back-of-envelope planning."}],
+  "makeProblem": function () { const rate = H.pick([2, 3, 4, 5, 6, 7, 8, 10]); const triple = H.randInt(0, 1) === 1; return { rate: rate, triple: triple }; },
+  "promptHtml": function (p) { return "Years to <span class='op'>" + (p.triple ? "triple" : "double") + "</span> at " + p.rate + "%<small>nearest whole year</small>"; },
+  "checkAnswer": function (p, raw) {
+      const expected = Math.round((p.triple ? 110 : 70) / p.rate);
+      const guess = parseFloat(String(raw).replace(/[, ]/g, ""));
+      const ok = isFinite(guess) && Math.abs(guess - expected) <= 1;
+      return { correct: ok, expected: String(expected) + " years" };
+    },
+  "solutionSteps": function (p) {
+      const base = p.triple ? 110 : 70;
+      return [
+        { text: "Divide " + base + " by the rate." },
+        { math: base + " / " + p.rate + " = " + (base / p.rate).toFixed(1) + " years" },
+      ];
+    }
+};
+</script>
+<script>
+// Shared front-end engine inlined into every technique page.
+// A page defines a global `TECHNIQUE` object before this script runs. Shape:
+//   {
+//     id, title, chapter, oneLine, covers,
+//     teachSteps: [{ text, math }],            // interactive step-through (revealed one at a time)
+//     makeProblem(),                            // returns a problem object the other hooks understand
+//     promptHtml(problem),                      // the question shown to the solver
+//     checkAnswer(problem, rawInput),           // -> { correct: bool, expected: string }
+//     solutionSteps(problem),                   // -> [{ text, math }] full worked solution for a missed problem
+//     inputMode,                                // "number" | "text" | "weekday" | "grid"
+//     inputHint,                                // placeholder / helper text under the answer box
+//   }
+
+(function bootTechniquePage() {
+  const technique = window.TECHNIQUE;
+  const storageKey = "secrets-of-mental-math:" + technique.id;
+
+  const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  function readSavedBests() {
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return { bestStreak: 0, solvedTotal: 0, fastestMilliseconds: null };
+      const parsed = JSON.parse(raw);
+      return {
+        bestStreak: parsed.bestStreak || 0,
+        solvedTotal: parsed.solvedTotal || 0,
+        fastestMilliseconds: parsed.fastestMilliseconds == null ? null : parsed.fastestMilliseconds,
+      };
+    } catch (error) {
+      return { bestStreak: 0, solvedTotal: 0, fastestMilliseconds: null };
+    }
+  }
+
+  function writeSavedBests(bests) {
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(bests));
+    } catch (error) {
+      // localStorage may be unavailable (private mode); progress simply will not persist.
+    }
+  }
+
+  function formatMilliseconds(milliseconds) {
+    if (milliseconds == null) return "--";
+    return (milliseconds / 1000).toFixed(1) + "s";
+  }
+
+  function renderMathFragments(container, fragments) {
+    container.innerHTML = "";
+    fragments.forEach(function appendFragment(fragment) {
+      const block = document.createElement("div");
+      block.className = "step-line";
+      if (fragment.text) {
+        const text = document.createElement("p");
+        text.className = "step-text";
+        text.innerHTML = fragment.text;
+        block.appendChild(text);
+      }
+      if (fragment.math) {
+        const math = document.createElement("div");
+        math.className = "step-math";
+        math.textContent = fragment.math;
+        block.appendChild(math);
+      }
+      container.appendChild(block);
+    });
+  }
+
+  // ---- Teach section: reveal one step at a time -------------------------------
+  let revealedStepCount = 0;
+  const teachContainer = document.getElementById("teach-steps");
+  const teachNextButton = document.getElementById("teach-next");
+  const teachResetButton = document.getElementById("teach-reset");
+
+  function renderTeachSteps() {
+    const shown = technique.teachSteps.slice(0, revealedStepCount);
+    renderMathFragments(teachContainer, shown);
+    const allShown = revealedStepCount >= technique.teachSteps.length;
+    teachNextButton.textContent = revealedStepCount === 0 ? "Show first step" : allShown ? "All steps shown" : "Next step";
+    teachNextButton.disabled = allShown;
+    teachResetButton.style.display = revealedStepCount === 0 ? "none" : "inline-flex";
+  }
+
+  teachNextButton.addEventListener("click", function advanceTeachStep() {
+    if (revealedStepCount < technique.teachSteps.length) revealedStepCount += 1;
+    renderTeachSteps();
+  });
+  teachResetButton.addEventListener("click", function resetTeachSteps() {
+    revealedStepCount = 0;
+    renderTeachSteps();
+  });
+
+  // ---- Test section: timed, scored drills -------------------------------------
+  const promptContainer = document.getElementById("drill-prompt");
+  const answerForm = document.getElementById("drill-form");
+  const answerInput = document.getElementById("drill-input");
+  const answerHint = document.getElementById("drill-hint");
+  const feedbackContainer = document.getElementById("drill-feedback");
+  const solutionContainer = document.getElementById("drill-solution");
+  const nextProblemButton = document.getElementById("drill-next");
+  const startButton = document.getElementById("drill-start");
+  const drillPanel = document.getElementById("drill-panel");
+
+  const streakValue = document.getElementById("stat-streak");
+  const solvedValue = document.getElementById("stat-solved");
+  const timerValue = document.getElementById("stat-timer");
+  const bestStreakValue = document.getElementById("stat-best-streak");
+  const bestSolvedValue = document.getElementById("stat-best-solved");
+  const bestTimeValue = document.getElementById("stat-best-time");
+
+  let currentProblem = null;
+  let currentStreak = 0;
+  let sessionSolved = 0;
+  let problemStartedAt = 0;
+  let tickHandle = null;
+  let bests = readSavedBests();
+
+  function paintBests() {
+    bestStreakValue.textContent = String(bests.bestStreak);
+    bestSolvedValue.textContent = String(bests.solvedTotal);
+    bestTimeValue.textContent = formatMilliseconds(bests.fastestMilliseconds);
+  }
+
+  function paintSessionStats() {
+    streakValue.textContent = String(currentStreak);
+    solvedValue.textContent = String(sessionSolved);
+  }
+
+  function stopTimer() {
+    if (tickHandle != null) {
+      window.clearInterval(tickHandle);
+      tickHandle = null;
+    }
+  }
+
+  function startTimer() {
+    stopTimer();
+    problemStartedAt = performance.now();
+    timerValue.textContent = "0.0s";
+    tickHandle = window.setInterval(function tick() {
+      timerValue.textContent = formatMilliseconds(performance.now() - problemStartedAt);
+    }, 100);
+  }
+
+  function buildWeekdayInput() {
+    const wrap = document.createElement("div");
+    wrap.className = "weekday-grid";
+    weekdayNames.forEach(function addButton(name) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "weekday-button";
+      button.textContent = name;
+      button.addEventListener("click", function pickWeekday() {
+        submitAnswer(name);
+      });
+      wrap.appendChild(button);
+    });
+    return wrap;
+  }
+
+  function presentProblem() {
+    currentProblem = technique.makeProblem();
+    promptContainer.innerHTML = technique.promptHtml(currentProblem);
+    feedbackContainer.textContent = "";
+    feedbackContainer.className = "drill-feedback";
+    solutionContainer.innerHTML = "";
+    solutionContainer.style.display = "none";
+    nextProblemButton.style.display = "none";
+
+    const existingWeekday = document.getElementById("weekday-input");
+    if (existingWeekday) existingWeekday.remove();
+
+    if (technique.inputMode === "weekday") {
+      answerForm.style.display = "none";
+      const grid = buildWeekdayInput();
+      grid.id = "weekday-input";
+      promptContainer.insertAdjacentElement("afterend", grid);
+    } else {
+      answerForm.style.display = "flex";
+      answerInput.value = "";
+      answerInput.disabled = false;
+      answerInput.setAttribute("inputmode", technique.inputMode === "number" ? "decimal" : "text");
+      answerHint.textContent = technique.inputHint || "";
+      answerInput.focus();
+    }
+    startTimer();
+  }
+
+  function lockProblemInputs() {
+    answerInput.disabled = true;
+    const weekday = document.getElementById("weekday-input");
+    if (weekday) weekday.querySelectorAll("button").forEach(function disable(button) { button.disabled = true; });
+  }
+
+  function celebrate() {
+    const layer = document.getElementById("spark-layer");
+    for (let index = 0; index < 14; index += 1) {
+      const spark = document.createElement("span");
+      spark.className = "spark";
+      spark.style.left = (10 + Math.random() * 80) + "%";
+      spark.style.setProperty("--drift", (Math.random() * 80 - 40) + "px");
+      spark.style.animationDelay = (Math.random() * 0.12) + "s";
+      layer.appendChild(spark);
+      window.setTimeout(function removeSpark() { spark.remove(); }, 900);
+    }
+  }
+
+  function submitAnswer(rawInput) {
+    if (currentProblem == null) return;
+    const elapsed = performance.now() - problemStartedAt;
+    stopTimer();
+    const verdict = technique.checkAnswer(currentProblem, rawInput);
+    lockProblemInputs();
+
+    if (verdict.correct) {
+      currentStreak += 1;
+      sessionSolved += 1;
+      bests.solvedTotal += 1;
+      if (currentStreak > bests.bestStreak) bests.bestStreak = currentStreak;
+      if (bests.fastestMilliseconds == null || elapsed < bests.fastestMilliseconds) bests.fastestMilliseconds = elapsed;
+      writeSavedBests(bests);
+      feedbackContainer.textContent = "Correct  -  " + formatMilliseconds(elapsed) + (verdict.detail ? "  -  " + verdict.detail : "");
+      feedbackContainer.className = "drill-feedback is-correct";
+      celebrate();
+    } else {
+      currentStreak = 0;
+      feedbackContainer.textContent = verdict.detail ? "Not quite.  " + verdict.detail : "Not quite. The answer is " + verdict.expected + ".";
+      feedbackContainer.className = "drill-feedback is-wrong";
+      const heading = document.createElement("h4");
+      heading.textContent = "How to get it";
+      solutionContainer.appendChild(heading);
+      const stepsHost = document.createElement("div");
+      renderMathFragments(stepsHost, technique.solutionSteps(currentProblem));
+      solutionContainer.appendChild(stepsHost);
+      solutionContainer.style.display = "block";
+    }
+
+    paintSessionStats();
+    paintBests();
+    nextProblemButton.style.display = "inline-flex";
+    nextProblemButton.focus();
+  }
+
+  answerForm.addEventListener("submit", function onSubmit(event) {
+    event.preventDefault();
+    if (answerInput.disabled) return;
+    if (answerInput.value.trim() === "") return;
+    submitAnswer(answerInput.value);
+  });
+  nextProblemButton.addEventListener("click", presentProblem);
+  startButton.addEventListener("click", function beginDrills() {
+    drillPanel.classList.add("is-active");
+    startButton.style.display = "none";
+    presentProblem();
+  });
+
+  paintSessionStats();
+  paintBests();
+  renderTeachSteps();
+})();
+
+</script>
+</body>
+</html>
