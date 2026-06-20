@@ -206,6 +206,10 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 .tech-card .tech-stats { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.74rem; color: var(--ink-faint); white-space: nowrap; }
 .tech-card .tech-stats .done { color: var(--green); }
 
+.reset-row { display: flex; justify-content: center; margin: 36px 0 8px; }
+.reset-btn { font-size: 0.86rem; color: var(--ink-faint); border-color: rgba(255,111,143,0.3); }
+.reset-btn:hover { color: var(--rose); border-color: var(--rose); }
+
 </style>
 </head>
 <body>
@@ -553,31 +557,47 @@ section.card > h2 .glyph { font-size: 1.1rem; }
       </a>
     </div>
 
+  <div class="reset-row">
+    <button id="reset-progress" class="btn ghost reset-btn" type="button">Reset all progress</button>
+  </div>
+
   <p class="footnote">From <i>Secrets of Mental Math</i> by Arthur Benjamin &amp; Michael Shermer. Progress is saved in this browser only.</p>
 </div>
 
 <script>
-(function paintDashboard() {
+(function dashboard() {
   var ids = ["left-to-right-addition","left-to-right-subtraction","complements","multiply-by-11","squaring-ending-in-5","squaring-two-digit","two-by-one","three-by-one","two-by-two-addition","two-by-two-subtraction","two-by-two-factoring","two-digit-cubing","one-digit-division","two-digit-division","fraction-to-decimal","divisible-by-3","divisible-by-9","divisible-by-2","divisible-by-4","divisible-by-8","divisible-by-5","divisible-by-6","divisible-by-11","estimate-multiplication","estimate-square-root","tips","sales-tax","rule-of-70","casting-out-nines","casting-out-elevens","criss-cross-multiplication","pencil-square-root","phonetic-code","phonetic-decode","three-digit-squaring","three-by-two","three-by-three","day-of-week","quick-cube-roots","quick-square-roots","missing-digit","magic-1089"];
-  var tried = 0, solvedTotal = 0, bestStreak = 0;
-  ids.forEach(function (id) {
-    var raw = null;
-    try { raw = window.localStorage.getItem("secrets-of-mental-math:" + id); } catch (e) {}
-    var stats = raw ? JSON.parse(raw) : null;
-    var cell = document.querySelector('[data-stats="' + id + '"]');
-    if (stats && (stats.solvedTotal || stats.bestStreak)) {
-      tried += 1;
-      solvedTotal += stats.solvedTotal || 0;
-      if ((stats.bestStreak || 0) > bestStreak) bestStreak = stats.bestStreak;
-      var fastest = stats.fastestMilliseconds == null ? "--" : (stats.fastestMilliseconds / 1000).toFixed(1) + "s";
-      if (cell) cell.innerHTML = '<span class="done">' + (stats.solvedTotal || 0) + ' solved</span> &middot; streak ' + (stats.bestStreak || 0) + ' &middot; ' + fastest;
-    } else if (cell) {
-      cell.textContent = "not started";
-    }
+  var prefix = "secrets-of-mental-math:";
+
+  function paint() {
+    var tried = 0, solvedTotal = 0, bestStreak = 0;
+    ids.forEach(function (id) {
+      var raw = null;
+      try { raw = window.localStorage.getItem(prefix + id); } catch (e) {}
+      var stats = raw ? JSON.parse(raw) : null;
+      var cell = document.querySelector('[data-stats="' + id + '"]');
+      if (stats && (stats.solvedTotal || stats.bestStreak)) {
+        tried += 1;
+        solvedTotal += stats.solvedTotal || 0;
+        if ((stats.bestStreak || 0) > bestStreak) bestStreak = stats.bestStreak;
+        var fastest = stats.fastestMilliseconds == null ? "--" : (stats.fastestMilliseconds / 1000).toFixed(1) + "s";
+        if (cell) cell.innerHTML = '<span class="done">' + (stats.solvedTotal || 0) + ' solved</span> &middot; streak ' + (stats.bestStreak || 0) + ' &middot; ' + fastest;
+      } else if (cell) {
+        cell.textContent = "not started";
+      }
+    });
+    document.getElementById("overall-tried").textContent = tried + " / " + ids.length;
+    document.getElementById("overall-solved").textContent = solvedTotal.toLocaleString("en-US");
+    document.getElementById("overall-streak").textContent = String(bestStreak);
+  }
+
+  document.getElementById("reset-progress").addEventListener("click", function () {
+    if (!window.confirm("Reset all saved progress on this device? Streaks, totals, and fastest times for every technique will be erased. This cannot be undone.")) return;
+    ids.forEach(function (id) { try { window.localStorage.removeItem(prefix + id); } catch (e) {} });
+    paint();
   });
-  document.getElementById("overall-tried").textContent = tried + " / " + ids.length;
-  document.getElementById("overall-solved").textContent = solvedTotal.toLocaleString("en-US");
-  document.getElementById("overall-streak").textContent = String(bestStreak);
+
+  paint();
 })();
 </script>
 </body>

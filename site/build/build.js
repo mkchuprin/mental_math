@@ -179,31 +179,47 @@ ${themeCss}
 
   ${groups}
 
+  <div class="reset-row">
+    <button id="reset-progress" class="btn ghost reset-btn" type="button">Reset all progress</button>
+  </div>
+
   <p class="footnote">From <i>Secrets of Mental Math</i> by Arthur Benjamin &amp; Michael Shermer. Progress is saved in this browser only.</p>
 </div>
 
 <script>
-(function paintDashboard() {
+(function dashboard() {
   var ids = ${JSON.stringify(list.map(function (t) { return t.id; }))};
-  var tried = 0, solvedTotal = 0, bestStreak = 0;
-  ids.forEach(function (id) {
-    var raw = null;
-    try { raw = window.localStorage.getItem("secrets-of-mental-math:" + id); } catch (e) {}
-    var stats = raw ? JSON.parse(raw) : null;
-    var cell = document.querySelector('[data-stats="' + id + '"]');
-    if (stats && (stats.solvedTotal || stats.bestStreak)) {
-      tried += 1;
-      solvedTotal += stats.solvedTotal || 0;
-      if ((stats.bestStreak || 0) > bestStreak) bestStreak = stats.bestStreak;
-      var fastest = stats.fastestMilliseconds == null ? "--" : (stats.fastestMilliseconds / 1000).toFixed(1) + "s";
-      if (cell) cell.innerHTML = '<span class="done">' + (stats.solvedTotal || 0) + ' solved</span> &middot; streak ' + (stats.bestStreak || 0) + ' &middot; ' + fastest;
-    } else if (cell) {
-      cell.textContent = "not started";
-    }
+  var prefix = "secrets-of-mental-math:";
+
+  function paint() {
+    var tried = 0, solvedTotal = 0, bestStreak = 0;
+    ids.forEach(function (id) {
+      var raw = null;
+      try { raw = window.localStorage.getItem(prefix + id); } catch (e) {}
+      var stats = raw ? JSON.parse(raw) : null;
+      var cell = document.querySelector('[data-stats="' + id + '"]');
+      if (stats && (stats.solvedTotal || stats.bestStreak)) {
+        tried += 1;
+        solvedTotal += stats.solvedTotal || 0;
+        if ((stats.bestStreak || 0) > bestStreak) bestStreak = stats.bestStreak;
+        var fastest = stats.fastestMilliseconds == null ? "--" : (stats.fastestMilliseconds / 1000).toFixed(1) + "s";
+        if (cell) cell.innerHTML = '<span class="done">' + (stats.solvedTotal || 0) + ' solved</span> &middot; streak ' + (stats.bestStreak || 0) + ' &middot; ' + fastest;
+      } else if (cell) {
+        cell.textContent = "not started";
+      }
+    });
+    document.getElementById("overall-tried").textContent = tried + " / " + ids.length;
+    document.getElementById("overall-solved").textContent = solvedTotal.toLocaleString("en-US");
+    document.getElementById("overall-streak").textContent = String(bestStreak);
+  }
+
+  document.getElementById("reset-progress").addEventListener("click", function () {
+    if (!window.confirm("Reset all saved progress on this device? Streaks, totals, and fastest times for every technique will be erased. This cannot be undone.")) return;
+    ids.forEach(function (id) { try { window.localStorage.removeItem(prefix + id); } catch (e) {} });
+    paint();
   });
-  document.getElementById("overall-tried").textContent = tried + " / " + ids.length;
-  document.getElementById("overall-solved").textContent = solvedTotal.toLocaleString("en-US");
-  document.getElementById("overall-streak").textContent = String(bestStreak);
+
+  paint();
 })();
 </script>
 </body>
