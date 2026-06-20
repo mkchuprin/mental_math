@@ -459,9 +459,17 @@ window.TECHNIQUE = {
   let currentProblem = null;
   let currentStreak = 0;
   let sessionSolved = 0;
-  let problemStartedAt = 0;
   let tickHandle = null;
   let bests = readSavedBests();
+
+  // Timer counts only foreground time. `accumulatedMs` banks time from past visible
+  // segments; `segmentStartedAt` marks the current visible segment (null while hidden).
+  // This keeps a backgrounded tab / locked phone from inflating a problem's solve time.
+  let accumulatedMs = 0;
+  let segmentStartedAt = null;
+  function elapsedNow() {
+    return accumulatedMs + (segmentStartedAt == null ? 0 : performance.now() - segmentStartedAt);
+  }
 
   function paintBests() {
     bestStreakValue.textContent = String(bests.bestStreak);
@@ -474,21 +482,42 @@ window.TECHNIQUE = {
     solvedValue.textContent = String(sessionSolved);
   }
 
-  function stopTimer() {
+  function stopTickInterval() {
     if (tickHandle != null) {
       window.clearInterval(tickHandle);
       tickHandle = null;
     }
   }
 
+  // Fully stop and reset the timer for a problem (also used when a problem ends).
+  function stopTimer() {
+    stopTickInterval();
+    segmentStartedAt = null;
+  }
+
   function startTimer() {
-    stopTimer();
-    problemStartedAt = performance.now();
+    stopTickInterval();
+    accumulatedMs = 0;
+    segmentStartedAt = document.hidden ? null : performance.now();
     timerValue.textContent = "0.0s";
     tickHandle = window.setInterval(function tick() {
-      timerValue.textContent = formatMilliseconds(performance.now() - problemStartedAt);
+      timerValue.textContent = formatMilliseconds(elapsedNow());
     }, 100);
   }
+
+  // Pause foreground accounting when the page is hidden (tab switch, app backgrounded,
+  // screen lock) and resume on return, so only on-screen time counts toward the timer.
+  document.addEventListener("visibilitychange", function onVisibilityChange() {
+    if (document.hidden) {
+      if (segmentStartedAt != null) {
+        accumulatedMs += performance.now() - segmentStartedAt;
+        segmentStartedAt = null;
+      }
+    } else if (tickHandle != null && segmentStartedAt == null) {
+      // Resume only if a problem's timer is actively running.
+      segmentStartedAt = performance.now();
+    }
+  });
 
   function buildWeekdayInput() {
     const wrap = document.createElement("div");
@@ -555,7 +584,7 @@ window.TECHNIQUE = {
 
   function submitAnswer(rawInput) {
     if (currentProblem == null) return;
-    const elapsed = performance.now() - problemStartedAt;
+    const elapsed = elapsedNow();
     stopTimer();
     const verdict = technique.checkAnswer(currentProblem, rawInput);
     lockProblemInputs();
