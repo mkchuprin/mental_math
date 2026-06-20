@@ -59,9 +59,19 @@ const ITER = 400;
 let failures = [];
 
 techniques.forEach(function (technique) {
+  // Test across every digit option the technique offers (or a single default run if none).
+  const digitSizes = Array.isArray(technique.digitOptions) ? technique.digitOptions : [undefined];
   for (let trial = 0; trial < ITER; trial += 1) {
+    const sizeForTrial = digitSizes[trial % digitSizes.length];
     let problem;
-    try { problem = technique.makeProblem(); } catch (e) { failures.push(technique.id + ": makeProblem threw: " + e.message); break; }
+    try { problem = technique.makeProblem(sizeForTrial); } catch (e) { failures.push(technique.id + ": makeProblem(" + sizeForTrial + ") threw: " + e.message); break; }
+
+    // when a size is requested, operands must actually have that many digits
+    if (sizeForTrial !== undefined) {
+      const operands = [problem.a, problem.b, problem.n].filter(function (v) { return typeof v === "number"; });
+      const wrongSize = operands.find(function (v) { return String(Math.abs(v)).length !== sizeForTrial; });
+      if (wrongSize !== undefined) { failures.push(technique.id + ": size " + sizeForTrial + " produced operand " + wrongSize + " with " + String(Math.abs(wrongSize)).length + " digits"); break; }
+    }
 
     // prompt + solution should never throw
     try { technique.promptHtml(problem); } catch (e) { failures.push(technique.id + ": promptHtml threw: " + e.message); break; }

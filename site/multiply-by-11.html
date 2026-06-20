@@ -136,6 +136,17 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 #drill-panel:not(.is-active) .drill-stage { display: none; }
 .drill-stage { position: relative; }
 
+.digit-selector { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.digit-selector:empty { display: none; }
+.digit-label { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-right: 4px; }
+.digit-button {
+  font: inherit; cursor: pointer; min-width: 44px; padding: 8px 14px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.3); color: var(--ink-soft);
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.digit-button:hover { transform: translateY(-1px); color: var(--ink); }
+.digit-button.is-selected { background: linear-gradient(120deg, var(--gold), var(--gold-bright)); color: var(--stage-black); border-color: transparent; font-weight: 600; }
+
 #drill-prompt {
   font-family: "SF Mono", ui-monospace, Menlo, monospace;
   font-size: clamp(1.6rem, 5vw, 2.4rem);
@@ -221,8 +232,8 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 
   <header class="hero">
     <h1>Multiplying by 11</h1>
-    <p class="one-line">Split the two digits apart and drop their sum in the middle.</p>
-    <p class="covers">Any 2-digit number times 11.</p>
+    <p class="one-line">Split the digits apart and drop the running sums between them.</p>
+    <p class="covers">A 2- or 3-digit number times 11.</p>
   </header>
 
   <section class="card">
@@ -245,6 +256,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
       <button id="drill-start" class="btn">Start drilling</button>
       <div class="drill-stage">
         <div id="spark-layer"></div>
+        <div id="digit-selector" class="digit-selector"></div>
         <div class="scoreboard">
           <div class="score"><div class="label">Streak</div><div class="value" id="stat-streak">0</div></div>
           <div class="score"><div class="label">This session</div><div class="value" id="stat-solved">0</div></div>
@@ -273,6 +285,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 var H = {
   randInt: function randInt(low, high) { return low + Math.floor(Math.random() * (high - low + 1)); },
   pick: function pick(list) { return list[Math.floor(Math.random() * list.length)]; },
+  nDigit: function nDigit(count) { var low = Math.pow(10, count - 1); var high = Math.pow(10, count) - 1; return H.randInt(low, high); },
   digits: function digits(value) { return String(value).split("").map(Number); },
   digitSum: function digitSum(value) { return H.digits(Math.abs(value)).reduce(function (a, b) { return a + b; }, 0); },
   modSum: function modSum(value) { var n = Math.abs(value); while (n > 9) n = H.digitSum(n); return n; },
@@ -314,27 +327,30 @@ window.TECHNIQUE = {
   "title": "Multiplying by 11",
   "chapter": 2,
   "chapterTitle": "Basic Multiplication",
-  "oneLine": "Split the two digits apart and drop their sum in the middle.",
-  "covers": "Any 2-digit number times 11.",
+  "oneLine": "Split the digits apart and drop the running sums between them.",
+  "covers": "A 2- or 3-digit number times 11.",
   "inputMode": "number",
   "inputHint": "Type the product of the number and 11.",
-  "teachSteps": [{"text":"To multiply a 2-digit number by 11, pull its digits apart and put their sum in the gap."},{"text":"<b>53 × 11</b>: the digits are 5 and 3. Their sum is 8. Slot it between them."},{"math":"5 _ 3  ->  5 (5+3) 3  =  583"},{"text":"When the digit sum is 10 or more, carry the 1 into the left digit. <b>85 × 11</b>: 8 + 5 = 13."},{"math":"8 (13) 5  ->  carry the 1:  9 3 5  =  935"}],
-  "makeProblem": function () { return { n: H.randInt(10, 99) }; },
+  "teachSteps": [{"text":"To multiply a 2-digit number by 11, pull its digits apart and put their sum in the gap."},{"text":"<b>53 × 11</b>: the digits are 5 and 3. Their sum is 8. Slot it between them."},{"math":"5 _ 3  ->  5 (5+3) 3  =  583"},{"text":"When the digit sum is 10 or more, carry the 1 into the left digit. <b>85 × 11</b>: 8 + 5 = 13."},{"math":"8 (13) 5  ->  carry the 1:  9 3 5  =  935"},{"text":"For 3 digits, sum <i>each adjacent pair</i>. <b>352 × 11</b>: keep the 3, then 3+5, then 5+2, then keep the 2."},{"math":"3 (3+5) (5+2) 2  =  3 8 7 2  =  3872   (carry if any pair hits 10+)"}],
+  "digitOptions": [2,3],
+  "makeProblem": function (digits) { const count = digits || 2; return { n: H.nDigit(count) }; },
   "promptHtml": function (p) { return p.n + " <span class='op'>×</span> 11"; },
   "checkAnswer": function (p, raw) { const expected = p.n * 11; return { correct: parseInt(raw, 10) === expected, expected: String(expected) }; },
   "solutionSteps": function (p) {
-      const a = Math.floor(p.n / 10);
-      const b = p.n % 10;
-      const sum = a + b;
-      if (sum < 10) {
-        return [
-          { text: "Digits " + a + " and " + b + " sum to " + sum + ". Drop it in the middle." },
-          { math: a + " " + sum + " " + b + "  =  " + (p.n * 11) },
-        ];
+      const ds = String(p.n).split("").map(Number);
+      if (ds.length === 2) {
+        const a = ds[0], b = ds[1], sum = a + b;
+        if (sum < 10) return [{ text: "Digits " + a + " and " + b + " sum to " + sum + ". Drop it in the middle." }, { math: a + " " + sum + " " + b + "  =  " + (p.n * 11) }];
+        return [{ text: "Digits " + a + " and " + b + " sum to " + sum + " (two digits), so carry the 1." }, { math: a + " (" + sum + ") " + b + "  ->  " + (a + 1) + " " + (sum - 10) + " " + b + "  =  " + (p.n * 11) }];
       }
+      // 3-digit: lay out first digit, each adjacent-pair sum, last digit, then resolve carries.
+      const pairs = [];
+      for (let i = 0; i < ds.length - 1; i += 1) pairs.push(ds[i] + ds[i + 1]);
       return [
-        { text: "Digits " + a + " and " + b + " sum to " + sum + " (two digits), so carry the 1." },
-        { math: a + " (" + sum + ") " + b + "  ->  " + (a + 1) + " " + (sum - 10) + " " + b + "  =  " + (p.n * 11) },
+        { text: "Keep the first and last digit; between them put each adjacent-pair sum." },
+        { math: ds[0] + " (" + pairs.join(") (") + ") " + ds[ds.length - 1] },
+        { text: "Carry where a pair is 10 or more, left to right:" },
+        { math: p.n + " × 11 = " + H.commas(p.n * 11) },
       ];
     }
 };
@@ -534,8 +550,43 @@ window.TECHNIQUE = {
     return wrap;
   }
 
+  // Optional digit-count selector. A technique opts in via `digitOptions` (e.g. [2,3,4]);
+  // the chosen size is passed to makeProblem and remembered per technique.
+  const digitOptions = Array.isArray(technique.digitOptions) ? technique.digitOptions : null;
+  const digitStorageKey = storageKey + ":digits";
+  let selectedDigits = null;
+  if (digitOptions) {
+    let saved = null;
+    try { saved = parseInt(window.localStorage.getItem(digitStorageKey), 10); } catch (e) {}
+    selectedDigits = digitOptions.indexOf(saved) !== -1 ? saved : digitOptions[0];
+  }
+
+  function buildDigitSelector() {
+    const host = document.getElementById("digit-selector");
+    if (!host || !digitOptions) return;
+    host.innerHTML = "";
+    const label = document.createElement("span");
+    label.className = "digit-label";
+    label.textContent = "Digits:";
+    host.appendChild(label);
+    digitOptions.forEach(function (count) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "digit-button" + (count === selectedDigits ? " is-selected" : "");
+      button.textContent = String(count);
+      button.addEventListener("click", function pickDigits() {
+        if (count === selectedDigits) return;
+        selectedDigits = count;
+        try { window.localStorage.setItem(digitStorageKey, String(count)); } catch (e) {}
+        host.querySelectorAll(".digit-button").forEach(function (b) { b.classList.toggle("is-selected", b.textContent === String(count)); });
+        presentProblem();
+      });
+      host.appendChild(button);
+    });
+  }
+
   function presentProblem() {
-    currentProblem = technique.makeProblem();
+    currentProblem = technique.makeProblem(selectedDigits);
     promptContainer.innerHTML = technique.promptHtml(currentProblem);
     feedbackContainer.textContent = "";
     feedbackContainer.className = "drill-feedback";
@@ -643,6 +694,7 @@ window.TECHNIQUE = {
   startButton.addEventListener("click", function beginDrills() {
     drillPanel.classList.add("is-active");
     startButton.style.display = "none";
+    buildDigitSelector();
     presentProblem();
   });
 

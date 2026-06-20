@@ -22,6 +22,7 @@ const techniques = [
     covers: "2-and-3-digit addition, done left to right instead of the schoolbook right-to-left way.",
     inputMode: "number",
     inputHint: "Type the total and press Enter.",
+    digitOptions: [2, 3, 4],
     teachSteps: [
       { text: "Take <b>538 + 327</b>. Forget the right-to-left method. Start at the <i>left</i> and break the second number into its parts." },
       { text: "Add the hundreds first:", math: "538 + 300 = 838" },
@@ -30,11 +31,9 @@ const techniques = [
       { text: "Done — <b>865</b>. You always hold just one running number in your head, and you hear the answer from the big end first, the way you say it out loud." },
       { text: "Shortcut for a number near a round one: to add 496, add 500 and take back 4.", math: "759 + 496 = 759 + 500 - 4 = 1255" },
     ],
-    makeProblem: function () {
-      const threeDigit = H.randInt(0, 1) === 1;
-      const a = threeDigit ? H.randInt(120, 899) : H.randInt(15, 89);
-      const b = threeDigit ? H.randInt(110, 880) : H.randInt(15, 89);
-      return { a: a, b: b };
+    makeProblem: function (digits) {
+      const count = digits || 2;
+      return { a: H.nDigit(count), b: H.nDigit(count) };
     },
     promptHtml: function (p) { return p.a + " <span class='op'>+</span> " + p.b; },
     checkAnswer: function (p, raw) { const expected = p.a + p.b; return { correct: parseInt(raw, 10) === expected, expected: String(expected) }; },
@@ -68,6 +67,7 @@ const techniques = [
     covers: "2-and-3-digit subtraction, including the borrow-dodging trick of rounding the number being subtracted.",
     inputMode: "number",
     inputHint: "Type the difference and press Enter.",
+    digitOptions: [2, 3, 4],
     teachSteps: [
       { text: "Easy case first: <b>86 - 25</b>. Subtract the tens, then the ones." },
       { math: "86 - 20 = 66\n66 - 5 = 61" },
@@ -76,15 +76,12 @@ const techniques = [
       { text: "...then give back the 1 you over-subtracted (30 instead of 29):", math: "56 + 1 = 57" },
       { text: "Same idea for 3 digits: <b>747 - 598</b> becomes subtract 600, give back 2.", math: "747 - 600 = 147\n147 + 2 = 149" },
     ],
-    makeProblem: function () {
-      const threeDigit = H.randInt(0, 1) === 1;
-      if (threeDigit) {
-        const a = H.randInt(400, 980);
-        const b = H.randInt(110, a - 40);
-        return { a: a, b: b };
-      }
-      const a = H.randInt(40, 98);
-      const b = H.randInt(12, a - 5);
+    makeProblem: function (digits) {
+      const count = digits || 2;
+      let a = H.nDigit(count);
+      let b = H.nDigit(count);
+      if (b > a) { const t = a; a = b; b = t; }
+      if (a === b) b = b - H.randInt(1, Math.min(b - Math.pow(10, count - 1), 9) || 1);
       return { a: a, b: b };
     },
     promptHtml: function (p) { return p.a + " <span class='op'>-</span> " + p.b; },
@@ -150,33 +147,38 @@ const techniques = [
     title: "Multiplying by 11",
     chapter: 2,
     chapterTitle: "Basic Multiplication",
-    oneLine: "Split the two digits apart and drop their sum in the middle.",
-    covers: "Any 2-digit number times 11.",
+    oneLine: "Split the digits apart and drop the running sums between them.",
+    covers: "A 2- or 3-digit number times 11.",
     inputMode: "number",
     inputHint: "Type the product of the number and 11.",
+    digitOptions: [2, 3],
     teachSteps: [
       { text: "To multiply a 2-digit number by 11, pull its digits apart and put their sum in the gap." },
       { text: "<b>53 × 11</b>: the digits are 5 and 3. Their sum is 8. Slot it between them." },
       { math: "5 _ 3  ->  5 (5+3) 3  =  583" },
       { text: "When the digit sum is 10 or more, carry the 1 into the left digit. <b>85 × 11</b>: 8 + 5 = 13." },
       { math: "8 (13) 5  ->  carry the 1:  9 3 5  =  935" },
+      { text: "For 3 digits, sum <i>each adjacent pair</i>. <b>352 × 11</b>: keep the 3, then 3+5, then 5+2, then keep the 2." },
+      { math: "3 (3+5) (5+2) 2  =  3 8 7 2  =  3872   (carry if any pair hits 10+)" },
     ],
-    makeProblem: function () { return { n: H.randInt(10, 99) }; },
+    makeProblem: function (digits) { const count = digits || 2; return { n: H.nDigit(count) }; },
     promptHtml: function (p) { return p.n + " <span class='op'>×</span> 11"; },
     checkAnswer: function (p, raw) { const expected = p.n * 11; return { correct: parseInt(raw, 10) === expected, expected: String(expected) }; },
     solutionSteps: function (p) {
-      const a = Math.floor(p.n / 10);
-      const b = p.n % 10;
-      const sum = a + b;
-      if (sum < 10) {
-        return [
-          { text: "Digits " + a + " and " + b + " sum to " + sum + ". Drop it in the middle." },
-          { math: a + " " + sum + " " + b + "  =  " + (p.n * 11) },
-        ];
+      const ds = String(p.n).split("").map(Number);
+      if (ds.length === 2) {
+        const a = ds[0], b = ds[1], sum = a + b;
+        if (sum < 10) return [{ text: "Digits " + a + " and " + b + " sum to " + sum + ". Drop it in the middle." }, { math: a + " " + sum + " " + b + "  =  " + (p.n * 11) }];
+        return [{ text: "Digits " + a + " and " + b + " sum to " + sum + " (two digits), so carry the 1." }, { math: a + " (" + sum + ") " + b + "  ->  " + (a + 1) + " " + (sum - 10) + " " + b + "  =  " + (p.n * 11) }];
       }
+      // 3-digit: lay out first digit, each adjacent-pair sum, last digit, then resolve carries.
+      const pairs = [];
+      for (let i = 0; i < ds.length - 1; i += 1) pairs.push(ds[i] + ds[i + 1]);
       return [
-        { text: "Digits " + a + " and " + b + " sum to " + sum + " (two digits), so carry the 1." },
-        { math: a + " (" + sum + ") " + b + "  ->  " + (a + 1) + " " + (sum - 10) + " " + b + "  =  " + (p.n * 11) },
+        { text: "Keep the first and last digit; between them put each adjacent-pair sum." },
+        { math: ds[0] + " (" + pairs.join(") (") + ") " + ds[ds.length - 1] },
+        { text: "Carry where a pair is 10 or more, left to right:" },
+        { math: p.n + " × 11 = " + H.commas(p.n * 11) },
       ];
     },
   },
@@ -677,6 +679,7 @@ const techniques = [
     covers: "Quick approximate products — answers judged by how close, not exact.",
     inputMode: "number",
     inputHint: "Type your estimate — within 5% counts.",
+    digitOptions: [2, 3],
     teachSteps: [
       { text: "For a fast product estimate, round the numbers in <i>opposite</i> directions — round one up and the other down, so the two errors partly cancel." },
       { text: "<b>88 × 54</b>: round 88 up to 90, and round 54 down to 50." },
@@ -684,7 +687,7 @@ const techniques = [
       { text: "Rounding one up and one down stays closer than rounding both the same way. Within a few percent is the goal." },
       { text: "For huge numbers, drop the zeros, multiply, then put the magnitude back: 29 million × 14 thousand ≈ 406 billion." },
     ],
-    makeProblem: function () { return { a: H.randInt(31, 98), b: H.randInt(31, 98), exact: 0 }; },
+    makeProblem: function (digits) { const count = digits || 2; return { a: H.nDigit(count), b: H.nDigit(count) }; },
     promptHtml: function (p) { return p.a + " <span class='op'>×</span> " + p.b + "<small>estimate — within 5%</small>"; },
     checkAnswer: function (p, raw) {
       const exact = p.a * p.b;
@@ -857,6 +860,7 @@ const techniques = [
     covers: "Checking an addition or multiplication by comparing single-digit “mod sums.”",
     inputMode: "number",
     inputHint: "Type the mod sum (a single digit 1–9).",
+    digitOptions: [3, 4, 5, 6],
     teachSteps: [
       { text: "Casting out nines catches most arithmetic slips. The <b>mod sum</b> of a number is its digits added up, repeatedly, to one digit." },
       { math: "4328  ->  4+3+2+8 = 17  ->  1+7 = 8" },
@@ -865,7 +869,7 @@ const techniques = [
       { text: "For multiplication, multiply the mod sums instead of adding. A mismatch means a definite error (a match is an 8-in-9 confidence)." },
       { text: "Drill: just compute the mod sum of the number shown — the core skill." },
     ],
-    makeProblem: function () { return { n: H.randInt(1000, 999999) }; },
+    makeProblem: function (digits) { return { n: H.nDigit(digits || 4) }; },
     promptHtml: function (p) { return "mod sum of<br>" + H.commas(p.n); },
     checkAnswer: function (p, raw) { const expected = H.modSum(p.n); return { correct: parseInt(raw, 10) === expected, expected: String(expected) }; },
     solutionSteps: function (p) {
@@ -885,6 +889,7 @@ const techniques = [
     covers: "A sharper arithmetic check than nines — catches 10 errors in 11.",
     inputMode: "number",
     inputHint: "Type the result (0–10).",
+    digitOptions: [3, 4, 5, 6],
     teachSteps: [
       { text: "Casting out elevens is a stronger check. From the <b>right</b>, alternately subtract and add the digits." },
       { math: "234.87  ->  7 - 8 + 4 - 3 + 2 = 2" },
@@ -892,7 +897,7 @@ const techniques = [
       { text: "Use it just like nines: the parts' values combine the same way the numbers do, and should match the answer's value (mod 11)." },
       { text: "Drill: compute the elevens-value of the number shown." },
     ],
-    makeProblem: function () { return { n: H.randInt(1000, 999999) }; },
+    makeProblem: function (digits) { return { n: H.nDigit(digits || 4) }; },
     promptHtml: function (p) { return "elevens-value of<br>" + H.commas(p.n); },
     checkAnswer: function (p, raw) {
       const ds = H.digits(p.n).reverse();
@@ -1388,6 +1393,7 @@ function divisibilityTechnique(spec) {
     covers: "Deciding whether a number is divisible by " + spec.divisor + ".",
     inputMode: "text",
     inputHint: "Type  yes  or  no.",
+    digitOptions: [3, 4, 5, 6],
     _divisor: spec.divisor,
     _rule: spec.rule,
     _example: spec.example,
@@ -1396,12 +1402,13 @@ function divisibilityTechnique(spec) {
       { text: "Example — is " + H.commas(spec.example.n) + " divisible by " + spec.divisor + "? " + spec.example.note },
       { text: "Drill: you will see a number; answer yes or no." },
     ],
-    makeProblem: function () {
-      const divisor = spec._divisor;
+    makeProblem: function (digits) {
+      const divisor = this._divisor;
+      const count = digits || 4;
       const wantDivisible = H.randInt(0, 1) === 1;
       let n;
-      if (wantDivisible) { n = divisor * H.randInt(20, 9000); }
-      else { do { n = H.randInt(100, 999999); } while (n % divisor === 0); }
+      if (wantDivisible) { const base = H.nDigit(count); n = base - (base % divisor); if (n < Math.pow(10, count - 1)) n += divisor; }
+      else { do { n = H.nDigit(count); } while (n % divisor === 0); }
       return { n: n };
     },
     promptHtml: function (p) { return "is <span class='op'>" + H.commas(p.n) + "</span><br>divisible by " + this._divisor + "?"; },

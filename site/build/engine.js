@@ -192,8 +192,43 @@
     return wrap;
   }
 
+  // Optional digit-count selector. A technique opts in via `digitOptions` (e.g. [2,3,4]);
+  // the chosen size is passed to makeProblem and remembered per technique.
+  const digitOptions = Array.isArray(technique.digitOptions) ? technique.digitOptions : null;
+  const digitStorageKey = storageKey + ":digits";
+  let selectedDigits = null;
+  if (digitOptions) {
+    let saved = null;
+    try { saved = parseInt(window.localStorage.getItem(digitStorageKey), 10); } catch (e) {}
+    selectedDigits = digitOptions.indexOf(saved) !== -1 ? saved : digitOptions[0];
+  }
+
+  function buildDigitSelector() {
+    const host = document.getElementById("digit-selector");
+    if (!host || !digitOptions) return;
+    host.innerHTML = "";
+    const label = document.createElement("span");
+    label.className = "digit-label";
+    label.textContent = "Digits:";
+    host.appendChild(label);
+    digitOptions.forEach(function (count) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "digit-button" + (count === selectedDigits ? " is-selected" : "");
+      button.textContent = String(count);
+      button.addEventListener("click", function pickDigits() {
+        if (count === selectedDigits) return;
+        selectedDigits = count;
+        try { window.localStorage.setItem(digitStorageKey, String(count)); } catch (e) {}
+        host.querySelectorAll(".digit-button").forEach(function (b) { b.classList.toggle("is-selected", b.textContent === String(count)); });
+        presentProblem();
+      });
+      host.appendChild(button);
+    });
+  }
+
   function presentProblem() {
-    currentProblem = technique.makeProblem();
+    currentProblem = technique.makeProblem(selectedDigits);
     promptContainer.innerHTML = technique.promptHtml(currentProblem);
     feedbackContainer.textContent = "";
     feedbackContainer.className = "drill-feedback";
@@ -301,6 +336,7 @@
   startButton.addEventListener("click", function beginDrills() {
     drillPanel.classList.add("is-active");
     startButton.style.display = "none";
+    buildDigitSelector();
     presentProblem();
   });
 

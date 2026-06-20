@@ -136,6 +136,17 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 #drill-panel:not(.is-active) .drill-stage { display: none; }
 .drill-stage { position: relative; }
 
+.digit-selector { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.digit-selector:empty { display: none; }
+.digit-label { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-right: 4px; }
+.digit-button {
+  font: inherit; cursor: pointer; min-width: 44px; padding: 8px 14px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.3); color: var(--ink-soft);
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.digit-button:hover { transform: translateY(-1px); color: var(--ink); }
+.digit-button.is-selected { background: linear-gradient(120deg, var(--gold), var(--gold-bright)); color: var(--stage-black); border-color: transparent; font-weight: 600; }
+
 #drill-prompt {
   font-family: "SF Mono", ui-monospace, Menlo, monospace;
   font-size: clamp(1.6rem, 5vw, 2.4rem);
@@ -245,6 +256,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
       <button id="drill-start" class="btn">Start drilling</button>
       <div class="drill-stage">
         <div id="spark-layer"></div>
+        <div id="digit-selector" class="digit-selector"></div>
         <div class="scoreboard">
           <div class="score"><div class="label">Streak</div><div class="value" id="stat-streak">0</div></div>
           <div class="score"><div class="label">This session</div><div class="value" id="stat-solved">0</div></div>
@@ -273,6 +285,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 var H = {
   randInt: function randInt(low, high) { return low + Math.floor(Math.random() * (high - low + 1)); },
   pick: function pick(list) { return list[Math.floor(Math.random() * list.length)]; },
+  nDigit: function nDigit(count) { var low = Math.pow(10, count - 1); var high = Math.pow(10, count) - 1; return H.randInt(low, high); },
   digits: function digits(value) { return String(value).split("").map(Number); },
   digitSum: function digitSum(value) { return H.digits(Math.abs(value)).reduce(function (a, b) { return a + b; }, 0); },
   modSum: function modSum(value) { var n = Math.abs(value); while (n > 9) n = H.digitSum(n); return n; },
@@ -319,15 +332,13 @@ window.TECHNIQUE = {
   "inputMode": "number",
   "inputHint": "Type the difference and press Enter.",
   "teachSteps": [{"text":"Easy case first: <b>86 - 25</b>. Subtract the tens, then the ones."},{"math":"86 - 20 = 66\n66 - 5 = 61"},{"text":"Now the awkward case: <b>86 - 29</b>. The ones would force a borrow. Instead, subtract a round 30..."},{"math":"86 - 30 = 56"},{"text":"...then give back the 1 you over-subtracted (30 instead of 29):","math":"56 + 1 = 57"},{"text":"Same idea for 3 digits: <b>747 - 598</b> becomes subtract 600, give back 2.","math":"747 - 600 = 147\n147 + 2 = 149"}],
-  "makeProblem": function () {
-      const threeDigit = H.randInt(0, 1) === 1;
-      if (threeDigit) {
-        const a = H.randInt(400, 980);
-        const b = H.randInt(110, a - 40);
-        return { a: a, b: b };
-      }
-      const a = H.randInt(40, 98);
-      const b = H.randInt(12, a - 5);
+  "digitOptions": [2,3,4],
+  "makeProblem": function (digits) {
+      const count = digits || 2;
+      let a = H.nDigit(count);
+      let b = H.nDigit(count);
+      if (b > a) { const t = a; a = b; b = t; }
+      if (a === b) b = b - H.randInt(1, Math.min(b - Math.pow(10, count - 1), 9) || 1);
       return { a: a, b: b };
     },
   "promptHtml": function (p) { return p.a + " <span class='op'>-</span> " + p.b; },
@@ -547,8 +558,43 @@ window.TECHNIQUE = {
     return wrap;
   }
 
+  // Optional digit-count selector. A technique opts in via `digitOptions` (e.g. [2,3,4]);
+  // the chosen size is passed to makeProblem and remembered per technique.
+  const digitOptions = Array.isArray(technique.digitOptions) ? technique.digitOptions : null;
+  const digitStorageKey = storageKey + ":digits";
+  let selectedDigits = null;
+  if (digitOptions) {
+    let saved = null;
+    try { saved = parseInt(window.localStorage.getItem(digitStorageKey), 10); } catch (e) {}
+    selectedDigits = digitOptions.indexOf(saved) !== -1 ? saved : digitOptions[0];
+  }
+
+  function buildDigitSelector() {
+    const host = document.getElementById("digit-selector");
+    if (!host || !digitOptions) return;
+    host.innerHTML = "";
+    const label = document.createElement("span");
+    label.className = "digit-label";
+    label.textContent = "Digits:";
+    host.appendChild(label);
+    digitOptions.forEach(function (count) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "digit-button" + (count === selectedDigits ? " is-selected" : "");
+      button.textContent = String(count);
+      button.addEventListener("click", function pickDigits() {
+        if (count === selectedDigits) return;
+        selectedDigits = count;
+        try { window.localStorage.setItem(digitStorageKey, String(count)); } catch (e) {}
+        host.querySelectorAll(".digit-button").forEach(function (b) { b.classList.toggle("is-selected", b.textContent === String(count)); });
+        presentProblem();
+      });
+      host.appendChild(button);
+    });
+  }
+
   function presentProblem() {
-    currentProblem = technique.makeProblem();
+    currentProblem = technique.makeProblem(selectedDigits);
     promptContainer.innerHTML = technique.promptHtml(currentProblem);
     feedbackContainer.textContent = "";
     feedbackContainer.className = "drill-feedback";
@@ -656,6 +702,7 @@ window.TECHNIQUE = {
   startButton.addEventListener("click", function beginDrills() {
     drillPanel.classList.add("is-active");
     startButton.style.display = "none";
+    buildDigitSelector();
     presentProblem();
   });
 

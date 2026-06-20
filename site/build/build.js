@@ -18,7 +18,7 @@ function escapeHtml(value) {
 
 // Serialize a technique into a `window.TECHNIQUE = {...}` literal: data as JSON, behaviour as function source.
 function serializeTechnique(technique) {
-  const dataKeys = ["id", "title", "chapter", "chapterTitle", "oneLine", "covers", "inputMode", "inputHint", "teachSteps", "autoAdvance", "_divisor", "_rule", "_example"];
+  const dataKeys = ["id", "title", "chapter", "chapterTitle", "oneLine", "covers", "inputMode", "inputHint", "teachSteps", "autoAdvance", "digitOptions", "_divisor", "_rule", "_example"];
   const fnKeys = ["makeProblem", "promptHtml", "checkAnswer", "solutionSteps"];
   const parts = [];
   dataKeys.forEach(function (key) {
@@ -83,6 +83,7 @@ ${themeCss}
       <button id="drill-start" class="btn">Start drilling</button>
       <div class="drill-stage">
         <div id="spark-layer"></div>
+        <div id="digit-selector" class="digit-selector"></div>
         <div class="scoreboard">
           <div class="score"><div class="label">Streak</div><div class="value" id="stat-streak">0</div></div>
           <div class="score"><div class="label">This session</div><div class="value" id="stat-solved">0</div></div>

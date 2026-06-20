@@ -5,6 +5,7 @@ const helpersSource = `
 var H = {
   randInt: function randInt(low, high) { return low + Math.floor(Math.random() * (high - low + 1)); },
   pick: function pick(list) { return list[Math.floor(Math.random() * list.length)]; },
+  nDigit: function nDigit(count) { var low = Math.pow(10, count - 1); var high = Math.pow(10, count) - 1; return H.randInt(low, high); },
   digits: function digits(value) { return String(value).split("").map(Number); },
   digitSum: function digitSum(value) { return H.digits(Math.abs(value)).reduce(function (a, b) { return a + b; }, 0); },
   modSum: function modSum(value) { var n = Math.abs(value); while (n > 9) n = H.digitSum(n); return n; },
