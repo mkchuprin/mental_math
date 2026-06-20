@@ -482,6 +482,24 @@ window.TECHNIQUE = {
   let tickHandle = null;
   let bests = readSavedBests();
 
+  // Configure the on-screen keyboard ONCE. Re-setting type/inputmode on a focused input
+  // each problem is what makes iOS flash and dismiss the keyboard. Integer drills get the
+  // bare numpad (type=tel); drills whose answers can hold a decimal point get the decimal
+  // pad; text drills (division "84 r 3", yes/no, code words) get the full keyboard.
+  const decimalAnswerIds = ["estimate-square-root", "tips", "sales-tax", "fraction-to-decimal"];
+  if (technique.inputMode === "number") {
+    if (decimalAnswerIds.indexOf(technique.id) !== -1) {
+      answerInput.setAttribute("type", "text");
+      answerInput.setAttribute("inputmode", "decimal");
+    } else {
+      answerInput.setAttribute("type", "tel");
+      answerInput.setAttribute("inputmode", "numeric");
+    }
+  } else if (technique.inputMode === "text") {
+    answerInput.setAttribute("type", "text");
+    answerInput.setAttribute("inputmode", "text");
+  }
+
   // Timer counts only foreground time. `accumulatedMs` banks time from past visible
   // segments; `segmentStartedAt` marks the current visible segment (null while hidden).
   // This keeps a backgrounded tab / locked phone from inflating a problem's solve time.
@@ -612,8 +630,8 @@ window.TECHNIQUE = {
       answerInput.value = "";
       // Only touch `disabled` if it is actually set, so an auto-advance does not blur the
       // input (re-enabling an already-enabled field can dismiss the mobile keyboard).
+      // type/inputmode are set once at boot, never here, to avoid an iOS keyboard flash.
       if (answerInput.disabled) answerInput.disabled = false;
-      answerInput.setAttribute("inputmode", technique.inputMode === "number" ? "decimal" : "text");
       answerHint.textContent = technique.inputHint || "";
       if (document.activeElement !== answerInput) answerInput.focus();
     }
