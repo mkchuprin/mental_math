@@ -295,10 +295,11 @@
       paintSessionStats();
       paintBests();
       if (autoAdvance) {
-        // Keep the input enabled and focused so the mobile keyboard never collapses
-        // between problems. The worked solution only shows on wrong answers (which do
-        // not auto-advance), so there is nothing to lock here.
-        window.setTimeout(presentProblem, 650);
+        // Advance SYNCHRONOUSLY, inside the same input gesture, and never blur/disable the
+        // field. On iOS the soft keyboard collapses the moment focus work happens outside a
+        // user gesture (e.g. a setTimeout) -- so we load the next problem immediately and let
+        // the next keystroke clear the "Correct" flash. The keyboard stays up; no re-tap.
+        presentProblem();
         return;
       }
       lockProblemInputs();

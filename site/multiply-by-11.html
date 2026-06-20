@@ -217,7 +217,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 .tech-card .tech-stats { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.74rem; color: var(--ink-faint); white-space: nowrap; }
 .tech-card .tech-stats .done { color: var(--green); }
 
-.reset-row { display: flex; justify-content: center; margin: 36px 0 8px; }
+.reset-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 36px 0 8px; }
 .reset-btn { font-size: 0.86rem; color: var(--ink-faint); border-color: rgba(255,111,143,0.3); }
 .reset-btn:hover { color: var(--rose); border-color: var(--rose); }
 
@@ -653,10 +653,11 @@ window.TECHNIQUE = {
       paintSessionStats();
       paintBests();
       if (autoAdvance) {
-        // Keep the input enabled and focused so the mobile keyboard never collapses
-        // between problems. The worked solution only shows on wrong answers (which do
-        // not auto-advance), so there is nothing to lock here.
-        window.setTimeout(presentProblem, 650);
+        // Advance SYNCHRONOUSLY, inside the same input gesture, and never blur/disable the
+        // field. On iOS the soft keyboard collapses the moment focus work happens outside a
+        // user gesture (e.g. a setTimeout) -- so we load the next problem immediately and let
+        // the next keystroke clear the "Correct" flash. The keyboard stays up; no re-tap.
+        presentProblem();
         return;
       }
       lockProblemInputs();

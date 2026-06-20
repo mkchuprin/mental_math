@@ -181,6 +181,7 @@ ${themeCss}
   ${groups}
 
   <div class="reset-row">
+    <button id="update-app" class="btn ghost" type="button">Update to latest version</button>
     <button id="reset-progress" class="btn ghost reset-btn" type="button">Reset all progress</button>
   </div>
 
@@ -218,6 +219,18 @@ ${themeCss}
     if (!window.confirm("Reset all saved progress on this device? Streaks, totals, and fastest times for every technique will be erased. This cannot be undone.")) return;
     ids.forEach(function (id) { try { window.localStorage.removeItem(prefix + id); } catch (e) {} });
     paint();
+  });
+
+  // Force the freshest deployed version: drop any service worker + cached files, then
+  // hard-reload past the browser/HTTP cache. Keeps localStorage progress intact.
+  document.getElementById("update-app").addEventListener("click", function () {
+    var done = function () { window.location.replace(window.location.pathname + "?v=" + Date.now()); };
+    var jobs = [];
+    try {
+      if (window.caches && caches.keys) jobs.push(caches.keys().then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); }));
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) { return Promise.all(regs.map(function (r) { return r.unregister(); })); }));
+    } catch (e) {}
+    if (jobs.length) { Promise.all(jobs).then(done, done); } else { done(); }
   });
 
   paint();
