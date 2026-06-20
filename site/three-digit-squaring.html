@@ -599,10 +599,12 @@ window.TECHNIQUE = {
     } else {
       answerForm.style.display = "flex";
       answerInput.value = "";
-      answerInput.disabled = false;
+      // Only touch `disabled` if it is actually set, so an auto-advance does not blur the
+      // input (re-enabling an already-enabled field can dismiss the mobile keyboard).
+      if (answerInput.disabled) answerInput.disabled = false;
       answerInput.setAttribute("inputmode", technique.inputMode === "number" ? "decimal" : "text");
       answerHint.textContent = technique.inputHint || "";
-      answerInput.focus();
+      if (document.activeElement !== answerInput) answerInput.focus();
     }
     startTimer();
   }
@@ -631,7 +633,6 @@ window.TECHNIQUE = {
     const elapsed = elapsedNow();
     stopTimer();
     const verdict = technique.checkAnswer(currentProblem, rawInput);
-    lockProblemInputs();
 
     if (verdict.correct) {
       currentStreak += 1;
@@ -646,11 +647,15 @@ window.TECHNIQUE = {
       paintSessionStats();
       paintBests();
       if (autoAdvance) {
-        // No button: flash the success, then jump straight to the next problem.
+        // Keep the input enabled and focused so the mobile keyboard never collapses
+        // between problems. The worked solution only shows on wrong answers (which do
+        // not auto-advance), so there is nothing to lock here.
         window.setTimeout(presentProblem, 650);
         return;
       }
+      lockProblemInputs();
     } else {
+      lockProblemInputs();
       currentStreak = 0;
       feedbackContainer.textContent = verdict.detail ? "Not quite.  " + verdict.detail : "Not quite. The answer is " + verdict.expected + ".";
       feedbackContainer.className = "drill-feedback is-wrong";
