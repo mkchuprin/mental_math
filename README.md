@@ -1,5 +1,9 @@
 # Mental Math practice deck
 
+### ▶ [Open the app](https://mkchuprin.github.io/mental_math/)
+
+&nbsp;&nbsp;&nbsp;&nbsp;**https://mkchuprin.github.io/mental_math/**
+
 Interactive practice pages for the lightning-calculation techniques in
 *Secrets of Mental Math* (Arthur Benjamin & Michael Shermer). Each technique gets
 its own self-contained page that teaches the method step by step, then drills it
@@ -8,11 +12,13 @@ worked solution on any miss. Progress is saved per-browser in `localStorage`.
 
 ## Use it
 
-Open [`site/glossary.html`](site/glossary.html) in a browser — it is the
-dashboard and the index of all techniques. Every page is a standalone `.html`
-file; no server or build step is needed to use them.
+Tap **[Open the app](https://mkchuprin.github.io/mental_math/)** above — it loads
+the live dashboard (the index of all 42 techniques). On a phone you can then
+add it to your home screen for a one-tap, full-screen launch.
 
-The `mm` shell alias opens the dashboard directly.
+Every page is a standalone `.html` file with no server or build step, so you can
+also open [`site/glossary.html`](site/glossary.html) directly from a local clone.
+The `mm` shell alias opens the live app.
 
 ## Develop
 
