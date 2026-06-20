@@ -1,0 +1,14 @@
+{
+  "name": "Secrets of Mental Math",
+  "short_name": "Mental Math",
+  "description": "Practice the lightning-calculation techniques from Secrets of Mental Math.",
+  "start_url": "glossary.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b16",
+  "theme_color": "#0b0b16",
+  "icons": [
+    { "src": "icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any maskable" }
+  ]
+}
