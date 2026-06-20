@@ -669,6 +669,7 @@ const techniques = [
   // ===================== CHAPTER 5 =====================
   {
     id: "estimate-multiplication",
+    autoAdvance: false,
     title: "Guesstimating Products",
     chapter: 5,
     chapterTitle: "The Art of Guesstimation",
@@ -704,6 +705,7 @@ const techniques = [
   },
   {
     id: "estimate-square-root",
+    autoAdvance: false,
     title: "Estimating Square Roots",
     chapter: 5,
     chapterTitle: "The Art of Guesstimation",
@@ -742,6 +744,7 @@ const techniques = [
   },
   {
     id: "tips",
+    autoAdvance: false,
     title: "Tips in Your Head",
     chapter: 5,
     chapterTitle: "The Art of Guesstimation",
@@ -776,6 +779,7 @@ const techniques = [
   },
   {
     id: "sales-tax",
+    autoAdvance: false,
     title: "Sales Tax in Your Head",
     chapter: 5,
     chapterTitle: "The Art of Guesstimation",
@@ -812,6 +816,7 @@ const techniques = [
   },
   {
     id: "rule-of-70",
+    autoAdvance: false,
     title: "Rule of 70 (and 110)",
     chapter: 5,
     chapterTitle: "The Art of Guesstimation",

@@ -249,7 +249,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
         <div id="drill-prompt"></div>
         <form id="drill-form" autocomplete="off">
           <input id="drill-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" />
-          <button type="submit" class="btn">Check</button>
+          <button type="submit" class="btn" id="drill-check">Check</button>
         </form>
         <p id="drill-hint"></p>
         <div id="drill-feedback" class="drill-feedback"></div>
@@ -315,6 +315,7 @@ window.TECHNIQUE = {
   "inputMode": "number",
   "inputHint": "Type your estimate — within 2% counts.",
   "teachSteps": [{"text":"To estimate a square root, start from a perfect square you know, then refine by divide-and-average."},{"text":"<b>√19</b>: 4² = 16 is close, so guess 4. Divide 19 by the guess."},{"math":"19 ÷ 4 = 4.75"},{"text":"Average the guess and the quotient — the true root is between them:"},{"math":"(4 + 4.75) / 2 = 4.375    (true ≈ 4.359)"},{"text":"One round of divide-and-average is usually within a percent. Do it again for more accuracy."}],
+  "autoAdvance": false,
   "makeProblem": function () { let n = H.randInt(10, 990); const r = Math.sqrt(n); if (Number.isInteger(r)) n += 1; return { n: n }; },
   "promptHtml": function (p) { return "√" + p.n + "<small>estimate — within 2%</small>"; },
   "checkAnswer": function (p, raw) {
@@ -438,8 +439,13 @@ window.TECHNIQUE = {
   const feedbackContainer = document.getElementById("drill-feedback");
   const solutionContainer = document.getElementById("drill-solution");
   const nextProblemButton = document.getElementById("drill-next");
+  const checkButton = document.getElementById("drill-check");
   const startButton = document.getElementById("drill-start");
   const drillPanel = document.getElementById("drill-panel");
+
+  // Auto-advance everywhere except drills that opt out (the tolerance-based estimation screens).
+  const autoAdvance = technique.autoAdvance !== false;
+  if (autoAdvance && checkButton) checkButton.style.display = "none";
 
   const streakValue = document.getElementById("stat-streak");
   const solvedValue = document.getElementById("stat-solved");
@@ -562,6 +568,13 @@ window.TECHNIQUE = {
       feedbackContainer.textContent = "Correct  -  " + formatMilliseconds(elapsed) + (verdict.detail ? "  -  " + verdict.detail : "");
       feedbackContainer.className = "drill-feedback is-correct";
       celebrate();
+      paintSessionStats();
+      paintBests();
+      if (autoAdvance) {
+        // No button: flash the success, then jump straight to the next problem.
+        window.setTimeout(presentProblem, 650);
+        return;
+      }
     } else {
       currentStreak = 0;
       feedbackContainer.textContent = verdict.detail ? "Not quite.  " + verdict.detail : "Not quite. The answer is " + verdict.expected + ".";
@@ -580,6 +593,15 @@ window.TECHNIQUE = {
     nextProblemButton.style.display = "inline-flex";
     nextProblemButton.focus();
   }
+
+  // Auto-advance drills check on every keystroke and jump ahead the instant the answer is right.
+  // Estimation drills (autoAdvance === false) keep the Check button and explicit submit.
+  answerInput.addEventListener("input", function onInput() {
+    if (!autoAdvance || answerInput.disabled) return;
+    if (answerInput.value.trim() === "") return;
+    const verdict = technique.checkAnswer(currentProblem, answerInput.value);
+    if (verdict.correct) submitAnswer(answerInput.value);
+  });
 
   answerForm.addEventListener("submit", function onSubmit(event) {
     event.preventDefault();

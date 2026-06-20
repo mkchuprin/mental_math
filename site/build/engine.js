@@ -98,8 +98,13 @@
   const feedbackContainer = document.getElementById("drill-feedback");
   const solutionContainer = document.getElementById("drill-solution");
   const nextProblemButton = document.getElementById("drill-next");
+  const checkButton = document.getElementById("drill-check");
   const startButton = document.getElementById("drill-start");
   const drillPanel = document.getElementById("drill-panel");
+
+  // Auto-advance everywhere except drills that opt out (the tolerance-based estimation screens).
+  const autoAdvance = technique.autoAdvance !== false;
+  if (autoAdvance && checkButton) checkButton.style.display = "none";
 
   const streakValue = document.getElementById("stat-streak");
   const solvedValue = document.getElementById("stat-solved");
@@ -222,6 +227,13 @@
       feedbackContainer.textContent = "Correct  -  " + formatMilliseconds(elapsed) + (verdict.detail ? "  -  " + verdict.detail : "");
       feedbackContainer.className = "drill-feedback is-correct";
       celebrate();
+      paintSessionStats();
+      paintBests();
+      if (autoAdvance) {
+        // No button: flash the success, then jump straight to the next problem.
+        window.setTimeout(presentProblem, 650);
+        return;
+      }
     } else {
       currentStreak = 0;
       feedbackContainer.textContent = verdict.detail ? "Not quite.  " + verdict.detail : "Not quite. The answer is " + verdict.expected + ".";
@@ -240,6 +252,15 @@
     nextProblemButton.style.display = "inline-flex";
     nextProblemButton.focus();
   }
+
+  // Auto-advance drills check on every keystroke and jump ahead the instant the answer is right.
+  // Estimation drills (autoAdvance === false) keep the Check button and explicit submit.
+  answerInput.addEventListener("input", function onInput() {
+    if (!autoAdvance || answerInput.disabled) return;
+    if (answerInput.value.trim() === "") return;
+    const verdict = technique.checkAnswer(currentProblem, answerInput.value);
+    if (verdict.correct) submitAnswer(answerInput.value);
+  });
 
   answerForm.addEventListener("submit", function onSubmit(event) {
     event.preventDefault();
