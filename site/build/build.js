@@ -104,6 +104,13 @@ ${themeCss}
     </div>
   </section>
 
+  <section class="card" id="progress-card" style="display:none">
+    <h2><span class="glyph">&#9201;</span> Your progress</h2>
+    <div id="progress-graph"></div>
+    <div id="progress-legend" class="progress-legend"></div>
+    <p class="progress-note">Solve time per correct answer. Dots are individual attempts; the line is a smoothed trend. Lower is faster.</p>
+  </section>
+
   <p class="footnote">From <i>Secrets of Mental Math</i> by Arthur Benjamin &amp; Michael Shermer. Practice page &mdash; progress saved in this browser only.</p>
 </div>
 
@@ -216,8 +223,13 @@ ${themeCss}
   }
 
   document.getElementById("reset-progress").addEventListener("click", function () {
-    if (!window.confirm("Reset all saved progress on this device? Streaks, totals, and fastest times for every technique will be erased. This cannot be undone.")) return;
-    ids.forEach(function (id) { try { window.localStorage.removeItem(prefix + id); } catch (e) {} });
+    if (!window.confirm("Reset all saved progress on this device? Streaks, totals, fastest times, and the progress graphs for every technique will be erased. This cannot be undone.")) return;
+    try {
+      // Remove every key under our prefix: per-technique stats, :history, :digits.
+      const toRemove = [];
+      for (let i = 0; i < window.localStorage.length; i += 1) { const key = window.localStorage.key(i); if (key && key.indexOf(prefix) === 0) toRemove.push(key); }
+      toRemove.forEach(function (key) { window.localStorage.removeItem(key); });
+    } catch (e) {}
     paint();
   });
 

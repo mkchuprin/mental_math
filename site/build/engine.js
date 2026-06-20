@@ -40,6 +40,123 @@
     }
   }
 
+  // Solve-time history per digit-size, for the progress graph. Shape:
+  //   { "<size>": [milliseconds, ...] }  ("all" when the drill has no digit selector).
+  const historyKey = storageKey + ":history";
+  function readHistory() {
+    try { const raw = window.localStorage.getItem(historyKey); return raw ? JSON.parse(raw) : {}; }
+    catch (error) { return {}; }
+  }
+  function appendHistory(sizeLabel, milliseconds) {
+    const history = readHistory();
+    if (!history[sizeLabel]) history[sizeLabel] = [];
+    history[sizeLabel].push(Math.round(milliseconds));
+    try { window.localStorage.setItem(historyKey, JSON.stringify(history)); } catch (error) {}
+    return history;
+  }
+
+  // Color per digit-size series. Falls back through the palette for any extra labels.
+  const seriesColors = { "2": "#ffd97a", "3": "#a98bff", "4": "#54d6c2", "5": "#ff6f8f", "6": "#5fd38a", "all": "#ffd97a" };
+  function colorFor(label, index) {
+    return seriesColors[label] || ["#ffd97a", "#a98bff", "#54d6c2", "#ff6f8f", "#5fd38a"][index % 5];
+  }
+
+  // Downsample a series to at most `cap` points by even striding (keeps first and last).
+  function downsample(values, cap) {
+    if (values.length <= cap) return values.map(function (v, i) { return { x: i, v: v }; });
+    const step = (values.length - 1) / (cap - 1);
+    const out = [];
+    for (let i = 0; i < cap; i += 1) { const idx = Math.round(i * step); out.push({ x: idx, v: values[idx] }); }
+    return out;
+  }
+
+  // Centered-ish moving average (trailing window) over the full series, in seconds.
+  function trend(values, windowSize) {
+    const out = [];
+    let sum = 0;
+    const queue = [];
+    for (let i = 0; i < values.length; i += 1) {
+      queue.push(values[i]); sum += values[i];
+      if (queue.length > windowSize) sum -= queue.shift();
+      out.push(sum / queue.length);
+    }
+    return out;
+  }
+
+  function renderProgressGraph() {
+    const card = document.getElementById("progress-card");
+    const graphHost = document.getElementById("progress-graph");
+    const legendHost = document.getElementById("progress-legend");
+    if (!card || !graphHost) return;
+    const history = readHistory();
+    const labels = Object.keys(history).filter(function (key) { return history[key] && history[key].length; });
+    if (!labels.length) { card.style.display = "none"; return; }
+    card.style.display = "block";
+
+    // Order numeric size labels ascending; "all" stands alone.
+    labels.sort(function (a, b) { return (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0); });
+
+    const width = 680, height = 260, padL = 52, padR = 16, padT = 16, padB = 30;
+    const plotW = width - padL - padR, plotH = height - padT - padB;
+
+    let maxAttempts = 0, maxMs = 0;
+    labels.forEach(function (label) {
+      const series = history[label];
+      if (series.length > maxAttempts) maxAttempts = series.length;
+      series.forEach(function (ms) { if (ms > maxMs) maxMs = ms; });
+    });
+    const xMax = Math.max(maxAttempts - 1, 1);
+    const yMax = Math.max(maxMs, 1000);
+
+    function sx(attemptIndex) { return padL + (xMax === 0 ? 0 : (attemptIndex / xMax) * plotW); }
+    function sy(ms) { return padT + plotH - (ms / yMax) * plotH; }
+
+    const svgParts = [];
+    svgParts.push('<svg viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="xMidYMid meet" class="progress-svg">');
+
+    // y gridlines + labels (4 ticks in seconds)
+    for (let t = 0; t <= 4; t += 1) {
+      const ms = (yMax / 4) * t;
+      const y = sy(ms);
+      svgParts.push('<line x1="' + padL + '" y1="' + y + '" x2="' + (width - padR) + '" y2="' + y + '" class="grid"/>');
+      svgParts.push('<text x="' + (padL - 8) + '" y="' + (y + 4) + '" class="axis-label" text-anchor="end">' + (ms / 1000).toFixed(ms >= 10000 ? 0 : 1) + 's</text>');
+    }
+    // x axis label
+    svgParts.push('<text x="' + (padL + plotW / 2) + '" y="' + (height - 6) + '" class="axis-label" text-anchor="middle">attempts &#8594;</text>');
+
+    labels.forEach(function (label, seriesIndex) {
+      const series = history[label];
+      const color = colorFor(label, seriesIndex);
+      // raw dots (downsampled for performance/legibility)
+      const points = downsample(series, 120);
+      points.forEach(function (p) {
+        svgParts.push('<circle cx="' + sx(p.x).toFixed(1) + '" cy="' + sy(p.v).toFixed(1) + '" r="2.2" fill="' + color + '" opacity="0.32"/>');
+      });
+      // smoothed trend line over the full series
+      if (series.length >= 2) {
+        const smoothed = trend(series, Math.max(3, Math.round(series.length / 12)));
+        const line = downsample(smoothed, 160);
+        const d = line.map(function (p, i) { return (i === 0 ? "M" : "L") + sx(p.x).toFixed(1) + " " + sy(p.v).toFixed(1); }).join(" ");
+        svgParts.push('<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>');
+      }
+    });
+
+    svgParts.push('</svg>');
+    graphHost.innerHTML = svgParts.join("");
+
+    // legend
+    if (legendHost) {
+      const hasSizes = !(labels.length === 1 && labels[0] === "all");
+      legendHost.innerHTML = labels.map(function (label, seriesIndex) {
+        const color = colorFor(label, seriesIndex);
+        const name = label === "all" ? "all attempts" : label + "-digit";
+        const count = history[label].length;
+        const best = Math.min.apply(null, history[label]);
+        return '<span class="legend-item"><span class="legend-swatch" style="background:' + color + '"></span>' + (hasSizes ? name : "solve time") + ' <span class="legend-meta">(' + count + ', best ' + (best / 1000).toFixed(1) + 's)</span></span>';
+      }).join("");
+    }
+  }
+
   function formatMilliseconds(milliseconds) {
     if (milliseconds == null) return "--";
     return (milliseconds / 1000).toFixed(1) + "s";
@@ -307,6 +424,9 @@
       if (currentStreak > bests.bestStreak) bests.bestStreak = currentStreak;
       if (bests.fastestMilliseconds == null || elapsed < bests.fastestMilliseconds) bests.fastestMilliseconds = elapsed;
       writeSavedBests(bests);
+      const sizeLabel = selectedDigits == null ? "all" : String(selectedDigits);
+      appendHistory(sizeLabel, elapsed);
+      renderProgressGraph();
       feedbackContainer.textContent = "Correct  -  " + formatMilliseconds(elapsed) + (verdict.detail ? "  -  " + verdict.detail : "");
       feedbackContainer.className = "drill-feedback is-correct";
       celebrate();
@@ -367,4 +487,5 @@
   paintSessionStats();
   paintBests();
   renderTeachSteps();
+  renderProgressGraph();
 })();

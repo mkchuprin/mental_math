@@ -203,6 +203,16 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 .tech-card .tech-stats { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.74rem; color: var(--ink-faint); white-space: nowrap; }
 .tech-card .tech-stats .done { color: var(--green); }
 
+#progress-graph { width: 100%; overflow: hidden; }
+.progress-svg { width: 100%; height: auto; display: block; }
+.progress-svg .grid { stroke: rgba(255,255,255,0.08); stroke-width: 1; }
+.progress-svg .axis-label { fill: var(--ink-faint); font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 11px; }
+.progress-legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 14px; }
+.legend-item { display: inline-flex; align-items: center; gap: 7px; font-size: 0.9rem; color: var(--ink-soft); }
+.legend-swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.legend-meta { color: var(--ink-faint); font-size: 0.8rem; }
+.progress-note { text-align: center; color: var(--ink-faint); font-size: 0.84rem; margin: 16px 0 0; }
+
 .reset-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 36px 0 8px; }
 .reset-btn { font-size: 0.86rem; color: var(--ink-faint); border-color: rgba(255,111,143,0.3); }
 .reset-btn:hover { color: var(--rose); border-color: var(--rose); }
