@@ -1,23 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="30%" r="85%">
-      <stop offset="0%" stop-color="#241f47"/><stop offset="100%" stop-color="#0b0b16"/>
+    <radialGradient id="bg" cx="50%" cy="26%" r="92%">
+      <stop offset="0%" stop-color="#2a2150"/><stop offset="100%" stop-color="#0b0b16"/>
     </radialGradient>
-    <linearGradient id="bolt" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ffe79a"/><stop offset="55%" stop-color="#f5c451"/><stop offset="100%" stop-color="#e0972f"/>
-    </linearGradient>
-    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#a98bff"/><stop offset="100%" stop-color="#54d6c2"/>
+    <linearGradient id="arc" x1="0.05" y1="0.9" x2="0.95" y2="0.1">
+      <stop offset="0%" stop-color="#a98bff"/><stop offset="55%" stop-color="#f5c451"/><stop offset="100%" stop-color="#ffe79a"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="url(#ring)" stroke-width="10" opacity="0.55"/>
-  <!-- lightning bolt = "lightning calculation" -->
-  <path d="M291 86 L150 286 L243 286 L221 426 L372 214 L271 214 Z"
-        fill="url(#bolt)" stroke="#0b0b16" stroke-width="6" stroke-linejoin="round"/>
-  <!-- tiny digits orbiting -->
-  <text x="120" y="150" font-family="ui-monospace,Menlo,monospace" font-size="34" fill="#a98bff" opacity="0.8">7</text>
-  <text x="372" y="150" font-family="ui-monospace,Menlo,monospace" font-size="34" fill="#54d6c2" opacity="0.8">3</text>
-  <text x="120" y="392" font-family="ui-monospace,Menlo,monospace" font-size="34" fill="#54d6c2" opacity="0.8">9</text>
-  <text x="372" y="392" font-family="ui-monospace,Menlo,monospace" font-size="34" fill="#a98bff" opacity="0.8">4</text>
+
+  <!-- the sweep: a single confident upward arc, centered -->
+  <path d="M104 360 Q200 150 408 168" fill="none" stroke="url(#arc)"
+        stroke-width="34" stroke-linecap="round"/>
+  <!-- arrowhead integrated at the end of the arc, same gold as the tip -->
+  <path d="M408 168 l-46 -20 18 46 z" fill="#ffe79a"/>
+
+  <!-- digits riding the arc, larger and clearly seated on the curve -->
+  <g font-family="Georgia, 'Iowan Old Style', serif" font-weight="700" fill="#f4f1ff">
+    <text x="150" y="320" font-size="78" transform="rotate(-34 150 320)" text-anchor="middle">3</text>
+    <text x="248" y="232" font-size="78" transform="rotate(-12 248 232)" text-anchor="middle">7</text>
+    <text x="338" y="206" font-size="78" transform="rotate(6 338 206)" text-anchor="middle">9</text>
+  </g>
 </svg>
