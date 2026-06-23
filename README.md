@@ -7,7 +7,7 @@
 Interactive practice pages for the lightning-calculation techniques in
 *Secrets of Mental Math* (Arthur Benjamin & Michael Shermer). Each technique gets
 its own self-contained page that teaches the method step by step, then drills it
-with endless randomly-generated problems, a timer, a streak counter, and a
+with 10-question batches of randomly-generated problems, a timer, a streak counter, and a
 worked solution on any miss. Progress is saved per-browser in `localStorage`.
 
 ## Use it

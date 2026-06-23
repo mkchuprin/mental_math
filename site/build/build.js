@@ -80,13 +80,14 @@ ${themeCss}
       <div class="score"><div class="label">Fastest</div><div class="value" id="stat-best-time">--</div></div>
     </div>
     <div id="drill-panel">
-      <button id="drill-start" class="btn">Start drilling</button>
+      <button id="drill-start" class="btn">Start 10-question batch</button>
       <div class="drill-stage">
         <div id="spark-layer"></div>
         <div id="digit-selector" class="digit-selector"></div>
         <div class="scoreboard">
           <div class="score"><div class="label">Streak</div><div class="value" id="stat-streak">0</div></div>
           <div class="score"><div class="label">This session</div><div class="value" id="stat-solved">0</div></div>
+          <div class="score"><div class="label">Batch</div><div class="value" id="stat-batch-progress">0 / 10</div></div>
           <div class="score is-timer"><div class="label">Timer</div><div class="value" id="stat-timer">0.0s</div></div>
         </div>
         <div id="drill-prompt"></div>
@@ -176,7 +177,7 @@ ${themeCss}
 <div class="wrap">
   <header class="glossary-hero">
     <h1>Secrets of Mental Math</h1>
-    <p>Every lightning-calculation secret from the book, each with a lesson you step through and an endless timed drill. Pick one and start.</p>
+    <p>Every lightning-calculation secret from the book, each with a lesson you step through and a timed 10-question quiz. Pick one and start.</p>
   </header>
 
   <div class="overall">

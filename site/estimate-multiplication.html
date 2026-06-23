@@ -124,7 +124,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 .btn.ghost:hover { color: var(--ink); }
 .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
 
-.scoreboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+.scoreboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 22px; }
 .score { background: rgba(0,0,0,0.25); border: var(--edge); border-radius: 12px; padding: 12px 14px; text-align: center; }
 .score .label { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
 .score .value { font-size: 1.5rem; font-weight: 700; color: var(--ink); margin-top: 4px; font-variant-numeric: tabular-nums; }
@@ -263,13 +263,14 @@ section.card > h2 .glyph { font-size: 1.1rem; }
       <div class="score"><div class="label">Fastest</div><div class="value" id="stat-best-time">--</div></div>
     </div>
     <div id="drill-panel">
-      <button id="drill-start" class="btn">Start drilling</button>
+      <button id="drill-start" class="btn">Start 10-question batch</button>
       <div class="drill-stage">
         <div id="spark-layer"></div>
         <div id="digit-selector" class="digit-selector"></div>
         <div class="scoreboard">
           <div class="score"><div class="label">Streak</div><div class="value" id="stat-streak">0</div></div>
           <div class="score"><div class="label">This session</div><div class="value" id="stat-solved">0</div></div>
+          <div class="score"><div class="label">Batch</div><div class="value" id="stat-batch-progress">0 / 10</div></div>
           <div class="score is-timer"><div class="label">Timer</div><div class="value" id="stat-timer">0.0s</div></div>
         </div>
         <div id="drill-prompt"></div>
@@ -592,6 +593,7 @@ window.TECHNIQUE = {
   const checkButton = document.getElementById("drill-check");
   const startButton = document.getElementById("drill-start");
   const drillPanel = document.getElementById("drill-panel");
+  const questionsPerBatch = 10;
 
   // Auto-advance everywhere except drills that opt out (the tolerance-based estimation screens).
   const autoAdvance = technique.autoAdvance !== false;
@@ -599,6 +601,7 @@ window.TECHNIQUE = {
 
   const streakValue = document.getElementById("stat-streak");
   const solvedValue = document.getElementById("stat-solved");
+  const batchProgressValue = document.getElementById("stat-batch-progress");
   const timerValue = document.getElementById("stat-timer");
   const bestStreakValue = document.getElementById("stat-best-streak");
   const bestSolvedValue = document.getElementById("stat-best-solved");
@@ -607,6 +610,8 @@ window.TECHNIQUE = {
   let currentProblem = null;
   let currentStreak = 0;
   let sessionSolved = 0;
+  let currentBatchAnswered = 0;
+  let currentBatchCorrect = 0;
   let tickHandle = null;
   let bests = readSavedBests();
 
@@ -646,6 +651,7 @@ window.TECHNIQUE = {
   function paintSessionStats() {
     streakValue.textContent = String(currentStreak);
     solvedValue.textContent = String(sessionSolved);
+    batchProgressValue.textContent = currentBatchAnswered + " / " + questionsPerBatch;
   }
 
   function stopTickInterval() {
@@ -730,13 +736,15 @@ window.TECHNIQUE = {
         selectedDigits = count;
         try { window.localStorage.setItem(digitStorageKey, String(count)); } catch (e) {}
         host.querySelectorAll(".digit-button").forEach(function (b) { b.classList.toggle("is-selected", b.textContent === String(count)); });
-        presentProblem();
+        if (currentBatchAnswered >= questionsPerBatch) startBatch();
+        else presentProblem();
       });
       host.appendChild(button);
     });
   }
 
   function presentProblem() {
+    if (currentBatchAnswered >= questionsPerBatch) return;
     currentProblem = technique.makeProblem(selectedDigits);
     promptContainer.innerHTML = technique.promptHtml(currentProblem);
     feedbackContainer.textContent = "";
@@ -766,6 +774,33 @@ window.TECHNIQUE = {
     startTimer();
   }
 
+  function finishBatch() {
+    currentProblem = null;
+    const existingWeekday = document.getElementById("weekday-input");
+    if (existingWeekday) existingWeekday.remove();
+    answerForm.style.display = "none";
+    answerHint.textContent = "";
+    solutionContainer.innerHTML = "";
+    solutionContainer.style.display = "none";
+    promptContainer.innerHTML = "<div>Batch complete</div>";
+    feedbackContainer.textContent = "You got " + currentBatchCorrect + " / " + questionsPerBatch + " correct. Start another batch when you are ready.";
+    feedbackContainer.className = "drill-feedback" + (currentBatchCorrect === questionsPerBatch ? " is-correct" : "");
+    nextProblemButton.textContent = "Start next batch";
+    nextProblemButton.style.display = "inline-flex";
+    nextProblemButton.focus();
+  }
+
+  function startBatch() {
+    currentBatchAnswered = 0;
+    currentBatchCorrect = 0;
+    drillPanel.classList.add("is-active");
+    startButton.style.display = "none";
+    nextProblemButton.textContent = "Next problem \u2192";
+    buildDigitSelector();
+    paintSessionStats();
+    presentProblem();
+  }
+
   function lockProblemInputs() {
     answerInput.disabled = true;
     const weekday = document.getElementById("weekday-input");
@@ -790,10 +825,12 @@ window.TECHNIQUE = {
     const elapsed = elapsedNow();
     stopTimer();
     const verdict = technique.checkAnswer(currentProblem, rawInput);
+    currentBatchAnswered += 1;
 
     if (verdict.correct) {
       currentStreak += 1;
       sessionSolved += 1;
+      currentBatchCorrect += 1;
       bests.solvedTotal += 1;
       if (currentStreak > bests.bestStreak) bests.bestStreak = currentStreak;
       if (bests.fastestMilliseconds == null || elapsed < bests.fastestMilliseconds) bests.fastestMilliseconds = elapsed;
@@ -806,6 +843,10 @@ window.TECHNIQUE = {
       celebrate();
       paintSessionStats();
       paintBests();
+      if (currentBatchAnswered >= questionsPerBatch) {
+        finishBatch();
+        return;
+      }
       if (autoAdvance) {
         // Advance SYNCHRONOUSLY, inside the same input gesture, and never blur/disable the
         // field. On iOS the soft keyboard collapses the moment focus work happens outside a
@@ -831,6 +872,10 @@ window.TECHNIQUE = {
 
     paintSessionStats();
     paintBests();
+    if (currentBatchAnswered >= questionsPerBatch) {
+      finishBatch();
+      return;
+    }
     nextProblemButton.style.display = "inline-flex";
     nextProblemButton.focus();
   }
@@ -839,6 +884,7 @@ window.TECHNIQUE = {
   // Estimation drills (autoAdvance === false) keep the Check button and explicit submit.
   answerInput.addEventListener("input", function onInput() {
     if (!autoAdvance || answerInput.disabled) return;
+    if (currentProblem == null) return;
     if (answerInput.value.trim() === "") return;
     const verdict = technique.checkAnswer(currentProblem, answerInput.value);
     if (verdict.correct) submitAnswer(answerInput.value);
@@ -850,13 +896,11 @@ window.TECHNIQUE = {
     if (answerInput.value.trim() === "") return;
     submitAnswer(answerInput.value);
   });
-  nextProblemButton.addEventListener("click", presentProblem);
-  startButton.addEventListener("click", function beginDrills() {
-    drillPanel.classList.add("is-active");
-    startButton.style.display = "none";
-    buildDigitSelector();
-    presentProblem();
+  nextProblemButton.addEventListener("click", function handleNextProblemClick() {
+    if (currentBatchAnswered >= questionsPerBatch) startBatch();
+    else presentProblem();
   });
+  startButton.addEventListener("click", startBatch);
 
   paintSessionStats();
   paintBests();

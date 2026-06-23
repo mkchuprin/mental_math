@@ -110,7 +110,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 .btn.ghost:hover { color: var(--ink); }
 .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
 
-.scoreboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+.scoreboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 22px; }
 .score { background: rgba(0,0,0,0.25); border: var(--edge); border-radius: 12px; padding: 12px 14px; text-align: center; }
 .score .label { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
 .score .value { font-size: 1.5rem; font-weight: 700; color: var(--ink); margin-top: 4px; font-variant-numeric: tabular-nums; }
