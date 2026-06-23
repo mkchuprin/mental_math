@@ -4,6 +4,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 
 const helpersModule = require("./techniques-helpers.js");
 const { techniques } = require("./techniques.js");
@@ -11,6 +12,18 @@ const engineSource = fs.readFileSync(path.join(__dirname, "engine.js"), "utf8");
 const themeCss = fs.readFileSync(path.join(__dirname, "theme.css"), "utf8");
 
 const outDir = path.join(__dirname, "..");
+
+function getGeneratedAppVersion() {
+  try {
+    const commitCount = Number(execSync("git rev-list --count HEAD", { cwd: path.join(__dirname, "..", ".."), encoding: "utf8" }).trim());
+    const workingTreeChanged = execSync("git status --short", { cwd: path.join(__dirname, "..", ".."), encoding: "utf8" }).trim() !== "";
+    return "v" + (commitCount + (workingTreeChanged ? 1 : 0));
+  } catch (error) {
+    return "v0";
+  }
+}
+
+const appVersion = getGeneratedAppVersion();
 
 function escapeHtml(value) {
   return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -54,7 +67,10 @@ ${themeCss}
 <div class="wrap">
   <div class="topbar">
     <a href="glossary.html">&#8592; All techniques</a>
-    <span class="chapter-chip">Chapter ${technique.chapter} &middot; ${escapeHtml(technique.chapterTitle)}</span>
+    <div class="topbar-meta">
+      <span class="chapter-chip">Chapter ${technique.chapter} &middot; ${escapeHtml(technique.chapterTitle)}</span>
+      <span class="version-chip">Version ${appVersion}</span>
+    </div>
   </div>
 
   <header class="hero">
@@ -175,6 +191,8 @@ ${themeCss}
 </head>
 <body>
 <div class="wrap">
+  <div class="version-bar"><span class="version-chip">Version ${appVersion}</span></div>
+
   <header class="glossary-hero">
     <h1>Secrets of Mental Math</h1>
     <p>Every lightning-calculation secret from the book, each with a lesson you step through and a timed 10-question quiz. Pick one and start.</p>

@@ -51,16 +51,18 @@ body {
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
 .topbar a { color: var(--gold); text-decoration: none; font-size: 0.95rem; letter-spacing: 0.02em; }
 .topbar a:hover { color: var(--gold-bright); }
-.chapter-chip {
+.topbar-meta { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.version-bar { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+.chapter-chip, .version-chip {
   font-family: "SF Mono", ui-monospace, Menlo, monospace;
   font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--violet-bright);
-  border: 1px solid rgba(169, 139, 255, 0.4);
   padding: 5px 11px;
   border-radius: 999px;
 }
+.chapter-chip { color: var(--violet-bright); border: 1px solid rgba(169, 139, 255, 0.4); }
+.version-chip { color: var(--ink-faint); border: 1px solid rgba(255,255,255,0.12); opacity: 0.72; }
 
 header.hero { margin-bottom: 36px; }
 header.hero h1 {
@@ -237,7 +239,10 @@ section.card > h2 .glyph { font-size: 1.1rem; }
 <div class="wrap">
   <div class="topbar">
     <a href="glossary.html">&#8592; All techniques</a>
-    <span class="chapter-chip">Chapter 5 &middot; The Art of Guesstimation</span>
+    <div class="topbar-meta">
+      <span class="chapter-chip">Chapter 5 &middot; The Art of Guesstimation</span>
+      <span class="version-chip">Version v15</span>
+    </div>
   </div>
 
   <header class="hero">
