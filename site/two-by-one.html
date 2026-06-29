@@ -241,7 +241,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
     <a href="glossary.html">&#8592; All techniques</a>
     <div class="topbar-meta">
       <span class="chapter-chip">Chapter 2 &middot; Basic Multiplication</span>
-      <span class="version-chip">Version v15</span>
+      <span class="version-chip">Version v16</span>
     </div>
   </div>
 
@@ -442,15 +442,15 @@ window.TECHNIQUE = {
     return out;
   }
 
-  // Centered-ish moving average (trailing window) over the full series, in seconds.
-  function trend(values, windowSize) {
+  // Collapse a series of individual solve times into one average per batch of `batchSize`.
+  // A trailing partial batch is included so the latest progress always shows.
+  function batchAverages(values, batchSize) {
     const out = [];
-    let sum = 0;
-    const queue = [];
-    for (let i = 0; i < values.length; i += 1) {
-      queue.push(values[i]); sum += values[i];
-      if (queue.length > windowSize) sum -= queue.shift();
-      out.push(sum / queue.length);
+    for (let start = 0; start < values.length; start += batchSize) {
+      const slice = values.slice(start, start + batchSize);
+      let sum = 0;
+      for (let i = 0; i < slice.length; i += 1) sum += slice[i];
+      out.push(sum / slice.length);
     }
     return out;
   }
@@ -471,16 +471,20 @@ window.TECHNIQUE = {
     const width = 680, height = 260, padL = 52, padR = 16, padT = 16, padB = 30;
     const plotW = width - padL - padR, plotH = height - padT - padB;
 
-    let maxAttempts = 0, maxMs = 0;
+    // Each plotted point is the average solve time over a batch of 10 answers.
+    const batchSize = 10;
+    const batched = {};
+    let maxBatches = 0, maxMs = 0;
     labels.forEach(function (label) {
-      const series = history[label];
-      if (series.length > maxAttempts) maxAttempts = series.length;
-      series.forEach(function (ms) { if (ms > maxMs) maxMs = ms; });
+      const averages = batchAverages(history[label], batchSize);
+      batched[label] = averages;
+      if (averages.length > maxBatches) maxBatches = averages.length;
+      averages.forEach(function (ms) { if (ms > maxMs) maxMs = ms; });
     });
-    const xMax = Math.max(maxAttempts - 1, 1);
+    const xMax = Math.max(maxBatches - 1, 1);
     const yMax = Math.max(maxMs, 1000);
 
-    function sx(attemptIndex) { return padL + (xMax === 0 ? 0 : (attemptIndex / xMax) * plotW); }
+    function sx(batchIndex) { return padL + (xMax === 0 ? 0 : (batchIndex / xMax) * plotW); }
     function sy(ms) { return padT + plotH - (ms / yMax) * plotH; }
 
     const svgParts = [];
@@ -494,20 +498,19 @@ window.TECHNIQUE = {
       svgParts.push('<text x="' + (padL - 8) + '" y="' + (y + 4) + '" class="axis-label" text-anchor="end">' + (ms / 1000).toFixed(ms >= 10000 ? 0 : 1) + 's</text>');
     }
     // x axis label
-    svgParts.push('<text x="' + (padL + plotW / 2) + '" y="' + (height - 6) + '" class="axis-label" text-anchor="middle">attempts &#8594;</text>');
+    svgParts.push('<text x="' + (padL + plotW / 2) + '" y="' + (height - 6) + '" class="axis-label" text-anchor="middle">batches of 10 &#8594;</text>');
 
     labels.forEach(function (label, seriesIndex) {
-      const series = history[label];
+      const averages = batched[label];
       const color = colorFor(label, seriesIndex);
-      // raw dots (downsampled for performance/legibility)
-      const points = downsample(series, 120);
+      // one dot per batch average (downsampled if there are very many batches)
+      const points = downsample(averages, 120);
       points.forEach(function (p) {
-        svgParts.push('<circle cx="' + sx(p.x).toFixed(1) + '" cy="' + sy(p.v).toFixed(1) + '" r="2.2" fill="' + color + '" opacity="0.32"/>');
+        svgParts.push('<circle cx="' + sx(p.x).toFixed(1) + '" cy="' + sy(p.v).toFixed(1) + '" r="2.8" fill="' + color + '"/>');
       });
-      // smoothed trend line over the full series
-      if (series.length >= 2) {
-        const smoothed = trend(series, Math.max(3, Math.round(series.length / 12)));
-        const line = downsample(smoothed, 160);
+      // line connecting the batch averages
+      if (averages.length >= 2) {
+        const line = downsample(averages, 160);
         const d = line.map(function (p, i) { return (i === 0 ? "M" : "L") + sx(p.x).toFixed(1) + " " + sy(p.v).toFixed(1); }).join(" ");
         svgParts.push('<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>');
       }
