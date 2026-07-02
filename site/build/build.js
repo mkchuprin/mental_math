@@ -23,11 +23,68 @@ function getGeneratedAppVersion() {
   }
 }
 
+// Every commit is one released version: the Nth commit (from the root) is "vN", dated by
+// that commit. If the working tree is dirty the in-progress build gets the next number,
+// tagged "unreleased". Returned newest-first for the dropdown.
+function getVersionHistory() {
+  try {
+    const repoRoot = path.join(__dirname, "..", "..");
+    const raw = execSync("git log --reverse --pretty=format:%cs%x1f%s", { cwd: repoRoot, encoding: "utf8" }).trim();
+    const history = raw.split("\n").map(function (line, index) {
+      const separatorAt = line.indexOf("\x1f");
+      return { version: "v" + (index + 1), date: line.slice(0, separatorAt), summary: line.slice(separatorAt + 1) };
+    });
+    const workingTreeChanged = execSync("git status --short", { cwd: repoRoot, encoding: "utf8" }).trim() !== "";
+    if (workingTreeChanged) history.push({ version: "v" + (history.length + 1), date: "unreleased", summary: "Working changes" });
+    return history.reverse();
+  } catch (error) {
+    return [];
+  }
+}
+
 const appVersion = getGeneratedAppVersion();
+const versionHistory = getVersionHistory();
 
 function escapeHtml(value) {
   return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
+
+// The version chip is a button that toggles a dropdown of every released version + its date.
+function versionMenuHtml() {
+  const rows = versionHistory.map(function (entry) {
+    const isCurrent = entry.version === appVersion;
+    const dateLabel = entry.date === "unreleased" ? "unreleased" : entry.date;
+    return `<li class="version-row${isCurrent ? " is-current" : ""}">` +
+      `<span class="version-row-tag">${escapeHtml(entry.version)}</span>` +
+      `<span class="version-row-summary">${escapeHtml(entry.summary)}</span>` +
+      `<span class="version-row-date">${escapeHtml(dateLabel)}</span>` +
+      `</li>`;
+  }).join("");
+  return `<div class="version-menu">
+      <button type="button" class="version-chip" id="version-chip" aria-haspopup="true" aria-expanded="false">Version ${appVersion} &#9662;</button>
+      <div class="version-dropdown" id="version-dropdown" hidden>
+        <div class="version-dropdown-title">Version history</div>
+        <ul class="version-list">${rows}</ul>
+      </div>
+    </div>`;
+}
+
+const versionMenuScript = `(function versionMenu() {
+  var chip = document.getElementById("version-chip");
+  var menu = document.getElementById("version-dropdown");
+  if (!chip || !menu) return;
+  function close() { menu.hidden = true; chip.setAttribute("aria-expanded", "false"); }
+  chip.addEventListener("click", function (event) {
+    event.stopPropagation();
+    var willOpen = menu.hidden;
+    menu.hidden = !willOpen;
+    chip.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  });
+  document.addEventListener("click", function (event) {
+    if (!menu.hidden && !menu.contains(event.target) && event.target !== chip) close();
+  });
+  document.addEventListener("keydown", function (event) { if (event.key === "Escape") close(); });
+})();`;
 
 // Serialize a technique into a `window.TECHNIQUE = {...}` literal: data as JSON, behaviour as function source.
 function serializeTechnique(technique) {
@@ -69,7 +126,7 @@ ${themeCss}
     <a href="glossary.html">&#8592; All techniques</a>
     <div class="topbar-meta">
       <span class="chapter-chip">Chapter ${technique.chapter} &middot; ${escapeHtml(technique.chapterTitle)}</span>
-      <span class="version-chip">Version ${appVersion}</span>
+      ${versionMenuHtml()}
     </div>
   </div>
 
@@ -103,7 +160,7 @@ ${themeCss}
         <div class="scoreboard">
           <div class="score"><div class="label">Streak</div><div class="value" id="stat-streak">0</div></div>
           <div class="score"><div class="label">This session</div><div class="value" id="stat-solved">0</div></div>
-          <div class="score"><div class="label">Batch</div><div class="value" id="stat-batch-progress">0 / 10</div></div>
+          <div class="score"><div class="label">Batch</div><div class="value" id="stat-batch-progress">0 / 5</div></div>
           <div class="score is-timer"><div class="label">Timer</div><div class="value" id="stat-timer">0.0s</div></div>
         </div>
         <div id="drill-prompt"></div>
@@ -125,7 +182,7 @@ ${themeCss}
     <h2><span class="glyph">&#9201;</span> Your progress</h2>
     <div id="progress-graph"></div>
     <div id="progress-legend" class="progress-legend"></div>
-    <p class="progress-note">Solve time per correct answer. Dots are individual attempts; the line is a smoothed trend. Lower is faster.</p>
+    <p class="progress-note">Average solve time per batch of 5 correct answers. Each dot is one batch; the line connects them. Lower is faster.</p>
   </section>
 
   <p class="footnote">From <i>Secrets of Mental Math</i> by Arthur Benjamin &amp; Michael Shermer. Practice page &mdash; progress saved in this browser only.</p>
@@ -137,6 +194,9 @@ window.TECHNIQUE = ${serializeTechnique(technique)};
 </script>
 <script>
 ${engineSource}
+</script>
+<script>
+${versionMenuScript}
 </script>
 </body>
 </html>
@@ -191,7 +251,7 @@ ${themeCss}
 </head>
 <body>
 <div class="wrap">
-  <div class="version-bar"><span class="version-chip">Version ${appVersion}</span></div>
+  <div class="version-bar">${versionMenuHtml()}</div>
 
   <header class="glossary-hero">
     <h1>Secrets of Mental Math</h1>
@@ -266,6 +326,7 @@ ${themeCss}
 
   paint();
 })();
+${versionMenuScript}
 </script>
 </body>
 </html>

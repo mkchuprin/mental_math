@@ -50,6 +50,39 @@ body {
 .chapter-chip { color: var(--violet-bright); border: 1px solid rgba(169, 139, 255, 0.4); }
 .version-chip { color: var(--ink-faint); border: 1px solid rgba(255,255,255,0.12); opacity: 0.72; }
 
+/* Version dropdown */
+.version-menu { position: relative; }
+button.version-chip {
+  background: transparent; cursor: pointer; font-family: inherit;
+  transition: opacity 0.12s ease, border-color 0.12s ease;
+}
+button.version-chip:hover { opacity: 1; border-color: rgba(255,255,255,0.28); }
+.version-dropdown {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 20;
+  width: min(340px, 82vw); max-height: 60vh; overflow-y: auto;
+  background: linear-gradient(180deg, var(--stage-panel), var(--stage-deep));
+  border: var(--edge); border-radius: 14px; padding: 10px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+}
+.version-dropdown[hidden] { display: none; }
+.version-dropdown-title {
+  font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--gold); padding: 4px 8px 8px;
+}
+.version-list { list-style: none; margin: 0; padding: 0; }
+.version-row {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 10px;
+  padding: 7px 8px; border-radius: 8px;
+}
+.version-row + .version-row { border-top: 1px solid rgba(255,255,255,0.06); }
+.version-row.is-current { background: rgba(255,217,122,0.1); }
+.version-row-tag {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.72rem;
+  color: var(--gold-bright); font-weight: 600;
+}
+.version-row-summary { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.3; }
+.version-row-date { color: var(--ink-faint); font-size: 0.72rem; white-space: nowrap; }
+
 header.hero { margin-bottom: 36px; }
 header.hero h1 {
   font-size: clamp(2rem, 5vw, 3rem);

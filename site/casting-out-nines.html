@@ -64,6 +64,39 @@ body {
 .chapter-chip { color: var(--violet-bright); border: 1px solid rgba(169, 139, 255, 0.4); }
 .version-chip { color: var(--ink-faint); border: 1px solid rgba(255,255,255,0.12); opacity: 0.72; }
 
+/* Version dropdown */
+.version-menu { position: relative; }
+button.version-chip {
+  background: transparent; cursor: pointer; font-family: inherit;
+  transition: opacity 0.12s ease, border-color 0.12s ease;
+}
+button.version-chip:hover { opacity: 1; border-color: rgba(255,255,255,0.28); }
+.version-dropdown {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 20;
+  width: min(340px, 82vw); max-height: 60vh; overflow-y: auto;
+  background: linear-gradient(180deg, var(--stage-panel), var(--stage-deep));
+  border: var(--edge); border-radius: 14px; padding: 10px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+}
+.version-dropdown[hidden] { display: none; }
+.version-dropdown-title {
+  font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--gold); padding: 4px 8px 8px;
+}
+.version-list { list-style: none; margin: 0; padding: 0; }
+.version-row {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 10px;
+  padding: 7px 8px; border-radius: 8px;
+}
+.version-row + .version-row { border-top: 1px solid rgba(255,255,255,0.06); }
+.version-row.is-current { background: rgba(255,217,122,0.1); }
+.version-row-tag {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.72rem;
+  color: var(--gold-bright); font-weight: 600;
+}
+.version-row-summary { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.3; }
+.version-row-date { color: var(--ink-faint); font-size: 0.72rem; white-space: nowrap; }
+
 header.hero { margin-bottom: 36px; }
 header.hero h1 {
   font-size: clamp(2rem, 5vw, 3rem);
@@ -259,7 +292,13 @@ section.card > h2 .glyph { font-size: 1.1rem; }
     <a href="glossary.html">&#8592; All techniques</a>
     <div class="topbar-meta">
       <span class="chapter-chip">Chapter 6 &middot; Pencil-and-Paper Math</span>
-      <span class="version-chip">Version v17</span>
+      <div class="version-menu">
+      <button type="button" class="version-chip" id="version-chip" aria-haspopup="true" aria-expanded="false">Version v18 &#9662;</button>
+      <div class="version-dropdown" id="version-dropdown" hidden>
+        <div class="version-dropdown-title">Version history</div>
+        <ul class="version-list"><li class="version-row is-current"><span class="version-row-tag">v18</span><span class="version-row-summary">Working changes</span><span class="version-row-date">unreleased</span></li><li class="version-row"><span class="version-row-tag">v17</span><span class="version-row-summary">Batches of 5, "Correct!" pop animation, per-batch time summary</span><span class="version-row-date">2026-07-02</span></li><li class="version-row"><span class="version-row-tag">v16</span><span class="version-row-summary">Plot per-batch average solve times instead of individual answers</span><span class="version-row-date">2026-06-29</span></li><li class="version-row"><span class="version-row-tag">v15</span><span class="version-row-summary">Show generated app version in page header</span><span class="version-row-date">2026-06-23</span></li><li class="version-row"><span class="version-row-tag">v14</span><span class="version-row-summary">Batch drills into 10-question quizzes</span><span class="version-row-date">2026-06-23</span></li><li class="version-row"><span class="version-row-tag">v13</span><span class="version-row-summary">Add per-digit-size progress graph of solve times</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v12</span><span class="version-row-summary">Numpad for number drills; set keyboard once to stop iOS dismissal</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v11</span><span class="version-row-summary">Keyboard stays up across auto-advance; add "Update to latest" button</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v10</span><span class="version-row-summary">Keep mobile keyboard up across auto-advance</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v9</span><span class="version-row-summary">Add digit-count selector to size-variable drills</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v8</span><span class="version-row-summary">README: prominent 'Open the app' link to the live site</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v7</span><span class="version-row-summary">Add "Reset all progress" button to the dashboard</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v6</span><span class="version-row-summary">Timer counts only foreground time</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v5</span><span class="version-row-summary">New app icon: rising sweep of digits</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v4</span><span class="version-row-summary">New app icon: lightning bolt with orbiting digits</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v3</span><span class="version-row-summary">Auto-advance exact-answer drills; keep Check button on estimation only</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v2</span><span class="version-row-summary">Add GitHub Pages hosting: root redirect, PWA manifest, icon, mobile meta</span><span class="version-row-date">2026-06-20</span></li><li class="version-row"><span class="version-row-tag">v1</span><span class="version-row-summary">Mental math practice deck: 42 interactive technique pages + dashboard</span><span class="version-row-date">2026-06-19</span></li></ul>
+      </div>
+    </div>
     </div>
   </div>
 
@@ -293,7 +332,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
         <div class="scoreboard">
           <div class="score"><div class="label">Streak</div><div class="value" id="stat-streak">0</div></div>
           <div class="score"><div class="label">This session</div><div class="value" id="stat-solved">0</div></div>
-          <div class="score"><div class="label">Batch</div><div class="value" id="stat-batch-progress">0 / 10</div></div>
+          <div class="score"><div class="label">Batch</div><div class="value" id="stat-batch-progress">0 / 5</div></div>
           <div class="score is-timer"><div class="label">Timer</div><div class="value" id="stat-timer">0.0s</div></div>
         </div>
         <div id="drill-prompt"></div>
@@ -315,7 +354,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
     <h2><span class="glyph">&#9201;</span> Your progress</h2>
     <div id="progress-graph"></div>
     <div id="progress-legend" class="progress-legend"></div>
-    <p class="progress-note">Solve time per correct answer. Dots are individual attempts; the line is a smoothed trend. Lower is faster.</p>
+    <p class="progress-note">Average solve time per batch of 5 correct answers. Each dot is one batch; the line connects them. Lower is faster.</p>
   </section>
 
   <p class="footnote">From <i>Secrets of Mental Math</i> by Arthur Benjamin &amp; Michael Shermer. Practice page &mdash; progress saved in this browser only.</p>
@@ -950,6 +989,24 @@ window.TECHNIQUE = {
   renderProgressGraph();
 })();
 
+</script>
+<script>
+(function versionMenu() {
+  var chip = document.getElementById("version-chip");
+  var menu = document.getElementById("version-dropdown");
+  if (!chip || !menu) return;
+  function close() { menu.hidden = true; chip.setAttribute("aria-expanded", "false"); }
+  chip.addEventListener("click", function (event) {
+    event.stopPropagation();
+    var willOpen = menu.hidden;
+    menu.hidden = !willOpen;
+    chip.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  });
+  document.addEventListener("click", function (event) {
+    if (!menu.hidden && !menu.contains(event.target) && event.target !== chip) close();
+  });
+  document.addEventListener("keydown", function (event) { if (event.key === "Escape") close(); });
+})();
 </script>
 </body>
 </html>
