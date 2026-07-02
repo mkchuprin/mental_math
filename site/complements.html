@@ -194,6 +194,24 @@ section.card > h2 .glyph { font-size: 1.1rem; }
   100% { opacity: 0; transform: translateY(-120px) translateX(var(--drift, 0)) scale(0.2); }
 }
 
+.correct-pop {
+  position: absolute; left: 50%; top: 38%;
+  transform: translate(-50%, -50%) scale(0.4) rotate(-6deg);
+  padding: 8px 18px; border-radius: 999px; white-space: nowrap;
+  font-size: 1.5rem; font-weight: 800; letter-spacing: 0.01em;
+  color: var(--stage-deep);
+  background: linear-gradient(135deg, var(--gold-bright), var(--green));
+  box-shadow: 0 8px 24px rgba(0,0,0,0.32);
+  animation: correct-pop 0.8s cubic-bezier(0.18, 0.9, 0.3, 1.2) forwards;
+}
+@keyframes correct-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-8deg); }
+  25% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(3deg); }
+  45% { transform: translate(-50%, -50%) scale(1) rotate(-2deg); }
+  70% { opacity: 1; transform: translate(-50%, -62%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -100%) scale(0.85); }
+}
+
 .footnote { text-align: center; color: var(--ink-faint); font-size: 0.85rem; margin-top: 12px; }
 
 /* ---- Glossary / dashboard ---- */
@@ -241,7 +259,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
     <a href="glossary.html">&#8592; All techniques</a>
     <div class="topbar-meta">
       <span class="chapter-chip">Chapter 1 &middot; Mental Addition &amp; Subtraction</span>
-      <span class="version-chip">Version v16</span>
+      <span class="version-chip">Version v17</span>
     </div>
   </div>
 
@@ -268,7 +286,7 @@ section.card > h2 .glyph { font-size: 1.1rem; }
       <div class="score"><div class="label">Fastest</div><div class="value" id="stat-best-time">--</div></div>
     </div>
     <div id="drill-panel">
-      <button id="drill-start" class="btn">Start 10-question batch</button>
+      <button id="drill-start" class="btn">Start 5-question batch</button>
       <div class="drill-stage">
         <div id="spark-layer"></div>
         <div id="digit-selector" class="digit-selector"></div>
@@ -477,8 +495,8 @@ window.TECHNIQUE = {
     const width = 680, height = 260, padL = 52, padR = 16, padT = 16, padB = 30;
     const plotW = width - padL - padR, plotH = height - padT - padB;
 
-    // Each plotted point is the average solve time over a batch of 10 answers.
-    const batchSize = 10;
+    // Each plotted point is the average solve time over a batch of 5 answers.
+    const batchSize = 5;
     const batched = {};
     let maxBatches = 0, maxMs = 0;
     labels.forEach(function (label) {
@@ -504,7 +522,7 @@ window.TECHNIQUE = {
       svgParts.push('<text x="' + (padL - 8) + '" y="' + (y + 4) + '" class="axis-label" text-anchor="end">' + (ms / 1000).toFixed(ms >= 10000 ? 0 : 1) + 's</text>');
     }
     // x axis label
-    svgParts.push('<text x="' + (padL + plotW / 2) + '" y="' + (height - 6) + '" class="axis-label" text-anchor="middle">batches of 10 &#8594;</text>');
+    svgParts.push('<text x="' + (padL + plotW / 2) + '" y="' + (height - 6) + '" class="axis-label" text-anchor="middle">batches of 5 &#8594;</text>');
 
     labels.forEach(function (label, seriesIndex) {
       const averages = batched[label];
@@ -599,7 +617,7 @@ window.TECHNIQUE = {
   const checkButton = document.getElementById("drill-check");
   const startButton = document.getElementById("drill-start");
   const drillPanel = document.getElementById("drill-panel");
-  const questionsPerBatch = 10;
+  const questionsPerBatch = 5;
 
   // Auto-advance everywhere except drills that opt out (the tolerance-based estimation screens).
   const autoAdvance = technique.autoAdvance !== false;
@@ -618,6 +636,7 @@ window.TECHNIQUE = {
   let sessionSolved = 0;
   let currentBatchAnswered = 0;
   let currentBatchCorrect = 0;
+  let currentBatchTimes = [];
   let tickHandle = null;
   let bests = readSavedBests();
 
@@ -789,7 +808,14 @@ window.TECHNIQUE = {
     solutionContainer.innerHTML = "";
     solutionContainer.style.display = "none";
     promptContainer.innerHTML = "<div>Batch complete</div>";
-    feedbackContainer.textContent = "You got " + currentBatchCorrect + " / " + questionsPerBatch + " correct. Start another batch when you are ready.";
+    let summary = "You got " + currentBatchCorrect + " / " + questionsPerBatch + " correct.";
+    if (currentBatchTimes.length) {
+      const fastest = Math.min.apply(null, currentBatchTimes);
+      const total = currentBatchTimes.reduce(function (sum, ms) { return sum + ms; }, 0);
+      const average = total / currentBatchTimes.length;
+      summary += "  Fastest " + formatMilliseconds(fastest) + "  -  average " + formatMilliseconds(average) + ".";
+    }
+    feedbackContainer.textContent = summary;
     feedbackContainer.className = "drill-feedback" + (currentBatchCorrect === questionsPerBatch ? " is-correct" : "");
     nextProblemButton.textContent = "Start next batch";
     nextProblemButton.style.display = "inline-flex";
@@ -799,6 +825,7 @@ window.TECHNIQUE = {
   function startBatch() {
     currentBatchAnswered = 0;
     currentBatchCorrect = 0;
+    currentBatchTimes = [];
     drillPanel.classList.add("is-active");
     startButton.style.display = "none";
     nextProblemButton.textContent = "Next problem \u2192";
@@ -826,6 +853,20 @@ window.TECHNIQUE = {
     }
   }
 
+  // A quick cute badge that pops in the middle of the drill on each correct answer.
+  const praiseWords = ["Correct!", "Nice!", "Boom!", "Yes!", "Sharp!", "Nailed it!", "Woo!", "Slick!"];
+  let praiseIndex = 0;
+  function popCorrect() {
+    const layer = document.getElementById("spark-layer");
+    if (!layer) return;
+    const badge = document.createElement("span");
+    badge.className = "correct-pop";
+    badge.textContent = praiseWords[praiseIndex % praiseWords.length];
+    praiseIndex += 1;
+    layer.appendChild(badge);
+    window.setTimeout(function removeBadge() { badge.remove(); }, 800);
+  }
+
   function submitAnswer(rawInput) {
     if (currentProblem == null) return;
     const elapsed = elapsedNow();
@@ -841,12 +882,14 @@ window.TECHNIQUE = {
       if (currentStreak > bests.bestStreak) bests.bestStreak = currentStreak;
       if (bests.fastestMilliseconds == null || elapsed < bests.fastestMilliseconds) bests.fastestMilliseconds = elapsed;
       writeSavedBests(bests);
+      currentBatchTimes.push(elapsed);
       const sizeLabel = selectedDigits == null ? "all" : String(selectedDigits);
       appendHistory(sizeLabel, elapsed);
       renderProgressGraph();
       feedbackContainer.textContent = "Correct  -  " + formatMilliseconds(elapsed) + (verdict.detail ? "  -  " + verdict.detail : "");
       feedbackContainer.className = "drill-feedback is-correct";
       celebrate();
+      popCorrect();
       paintSessionStats();
       paintBests();
       if (currentBatchAnswered >= questionsPerBatch) {

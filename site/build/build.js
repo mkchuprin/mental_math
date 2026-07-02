@@ -96,7 +96,7 @@ ${themeCss}
       <div class="score"><div class="label">Fastest</div><div class="value" id="stat-best-time">--</div></div>
     </div>
     <div id="drill-panel">
-      <button id="drill-start" class="btn">Start 10-question batch</button>
+      <button id="drill-start" class="btn">Start 5-question batch</button>
       <div class="drill-stage">
         <div id="spark-layer"></div>
         <div id="digit-selector" class="digit-selector"></div>
@@ -195,7 +195,7 @@ ${themeCss}
 
   <header class="glossary-hero">
     <h1>Secrets of Mental Math</h1>
-    <p>Every lightning-calculation secret from the book, each with a lesson you step through and a timed 10-question quiz. Pick one and start.</p>
+    <p>Every lightning-calculation secret from the book, each with a lesson you step through and a timed 5-question quiz. Pick one and start.</p>
   </header>
 
   <div class="overall">
